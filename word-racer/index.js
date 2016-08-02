@@ -9,16 +9,22 @@ const english = jsonfile.readFileSync('english.json');
 const sowpods = fs.readFileSync(`${__dirname}/sowpods.txt`).toString().split('\n');
 const trie = {};
 const eow = '_';
+const gridSolutions = [];
+var playGrids = {};
+var pathTree = [[], [], [], []];
 
 init();
 
 function init() {
-  console.log(`SOWPODS Dictionary List Length => ${dictionary.length}`); // 267751
-  console.log(`English JSON List Length => ${english.length}`); // 6752
-  console.log(`SOWPODS TXT List Length => ${sowpods.length}`); // 267751
+  // console.log(`SOWPODS Dictionary List Length => ${dictionary.length}`); // 267751
+  // console.log(`English JSON List Length => ${english.length}`); // 6752
+  // console.log(`SOWPODS TXT List Length => ${sowpods.length}`); // 267751
   createTrie();
-  console.log(searchTrie('WORDGAME'));
-  console.log(roundGrids);
+  // console.log(searchTrie('WORDGAME'));
+  generateGrid();
+  // console.log(playGrids);
+  generateGridSolutions();
+  console.log(pathTree);
 }
 
 function createTrie() {
@@ -29,4 +35,62 @@ function createTrie() {
 
 function searchTrie(word) {
   return __.get(trie, `${word.toUpperCase()}${eow}`.split(''), false);
+}
+
+function generateGrid() {
+  playGrids = _.map(roundGrids, grid => {
+    const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
+    const chars = _.map(_.times(count, () => _.sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ0')), c => { return c === '0' ? 'Qu' : c });
+    return _.map(grid, row => {
+      return _.map(row, item => {
+        return item ? chars.shift() : undefined;
+      });
+    });
+  });
+}
+
+function generateGridSolutions() {
+  _.each(playGrids, (grid, gridIndex) => {
+    _.each(grid, (row, rowIndex) => {
+      _.each(row, (item, itemIndex) => {
+        if (item) {
+          const pathTreeKey = `${rowIndex},${itemIndex}`;
+          pathTree[gridIndex][pathTreeKey] = [];
+          spiderGridFromIndex(gridIndex, rowIndex, itemIndex, pathTree[gridIndex][pathTreeKey]);
+        }
+      });
+    });
+  });
+}
+
+function getNearGridOptions(grid, rowIndex, itemIndex) {
+    const w = grid[rowIndex] && grid[rowIndex][itemIndex - 1] && [rowIndex, itemIndex - 1];
+    const nw = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex - 1] && [rowIndex - 1 , itemIndex - 1];
+    const n = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex] && [rowIndex - 1 , itemIndex];
+    const ne = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex + 1] && [rowIndex - 1 , itemIndex + 1];
+    const e = grid[rowIndex] && grid[rowIndex][itemIndex + 1] && [rowIndex , itemIndex + 1];
+    const se = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex + 1] && [rowIndex + 1 , itemIndex + 1];
+    const s = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex] && [rowIndex + 1 , itemIndex];
+    const sw = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex - 1] && [rowIndex + 1 , itemIndex - 1];
+    return [w, nw, n, ne, e, se, s, sw];
+}
+
+function filterNearGridOptions(gridIndex, gridOptions) {
+  return _.filter(gridOptions, dir => { return dir; });
+}
+
+function spiderGridFromIndex(gridIndex, rowIndex, itemIndex, currentPath) {
+  const grid = playGrids[gridIndex];
+  // const term = searchTrie(grid[rowIndex][itemIndex]);
+  const nearGridOptions = getNearGridOptions(grid, rowIndex, itemIndex);
+  const nearGridOptionsFiltered = filterNearGridOptions(gridIndex, nearGridOptions);
+  _.each(nearGridOptionsFiltered, (gridOption, gridOptionIndex) => {
+    if (gridOption) {
+      const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
+      if (!currentPath[pathTreeKey]) {
+        currentPath[pathTreeKey] = [];
+      }
+      // spiderGridFromIndex(gridIndex, gridOption[0], gridOption[1], currentPath[pathTreeKey]); // RangeError: Maximum call stack size exceeded
+    }
+  });
 }
