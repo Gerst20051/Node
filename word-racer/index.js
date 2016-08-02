@@ -3,6 +3,7 @@ const __ = require('lodash');
 const dictionary = require('./dictionary');
 const fs = require('fs');
 const jsonfile = require('jsonfile');
+const roundGrids = require('./round-grids');
 
 const english = jsonfile.readFileSync('english.json');
 const sowpods = fs.readFileSync(`${__dirname}/sowpods.txt`).toString().split('\n');
@@ -17,6 +18,7 @@ function init() {
   console.log(`SOWPODS TXT List Length => ${sowpods.length}`); // 267751
   createTrie();
   console.log(searchTrie('WORDGAME'));
+  console.log(roundGrids);
 }
 
 function createTrie() {
