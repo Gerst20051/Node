@@ -24,7 +24,6 @@ function init() {
   generateGrid();
   // console.log(playGrids);
   generateGridSolutions();
-  console.log(pathTree);
 }
 
 function createTrie() {
@@ -53,10 +52,10 @@ function generateGridSolutions() {
   _.each(playGrids, (grid, gridIndex) => {
     _.each(grid, (row, rowIndex) => {
       _.each(row, (item, itemIndex) => {
-        if (item) {
+        if (item && gridIndex === 0) {
           const pathTreeKey = `${rowIndex},${itemIndex}`;
           pathTree[gridIndex][pathTreeKey] = [];
-          spiderGridFromIndex(gridIndex, rowIndex, itemIndex, pathTree[gridIndex][pathTreeKey]);
+          spiderGridFromIndex(gridIndex, rowIndex, itemIndex, pathTreeKey, []);
         }
       });
     });
@@ -75,22 +74,41 @@ function getNearGridOptions(grid, rowIndex, itemIndex) {
     return [w, nw, n, ne, e, se, s, sw];
 }
 
-function filterNearGridOptions(gridIndex, gridOptions) {
-  return _.filter(gridOptions, dir => { return dir; });
-}
-
-function spiderGridFromIndex(gridIndex, rowIndex, itemIndex, currentPath) {
-  const grid = playGrids[gridIndex];
-  // const term = searchTrie(grid[rowIndex][itemIndex]);
-  const nearGridOptions = getNearGridOptions(grid, rowIndex, itemIndex);
-  const nearGridOptionsFiltered = filterNearGridOptions(gridIndex, nearGridOptions);
-  _.each(nearGridOptionsFiltered, (gridOption, gridOptionIndex) => {
-    if (gridOption) {
-      const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
-      if (!currentPath[pathTreeKey]) {
-        currentPath[pathTreeKey] = [];
-      }
-      // spiderGridFromIndex(gridIndex, gridOption[0], gridOption[1], currentPath[pathTreeKey]); // RangeError: Maximum call stack size exceeded
+function findElementFromFullPath(gridIndex, startingPathKey, fullPath) {
+  var currentPath = pathTree[gridIndex][startingPathKey];
+  _.each(fullPath, part => {
+    if (_.contains(currentPath, part)) {
+      currentPath = currentPath[part];
     }
   });
+  return currentPath;
+}
+
+function filterNearGridOptions(gridIndex, gridOptions, element) {
+  return _.filter(gridOptions, gridOption => {
+    if (gridOption) {
+      const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
+      if (!_.contains(element, pathTreeKey)) {
+        return gridOption;
+      }
+    }
+  });
+}
+
+var calls = 0;
+
+function spiderGridFromIndex(gridIndex, rowIndex, itemIndex, startingPathKey, fullPath) {
+  console.log(fullPath);
+  const grid = playGrids[gridIndex];
+  // const term = searchTrie(grid[rowIndex][itemIndex]);
+  const element = findElementFromFullPath(gridIndex, startingPathKey, fullPath);
+  const nearGridOptionsFiltered = filterNearGridOptions(gridIndex, getNearGridOptions(grid, rowIndex, itemIndex), element);
+  _.each(nearGridOptionsFiltered, (gridOption, gridOptionIndex) => {
+    const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
+    element.push({ [pathTreeKey]: [] });
+    // if (++calls < 10000000) {
+      spiderGridFromIndex(gridIndex, gridOption[0], gridOption[1], startingPathKey, fullPath.concat([ pathTreeKey ])); // RangeError: Maximum call stack size exceeded
+    // }
+  });
+  // console.log(element);
 }
