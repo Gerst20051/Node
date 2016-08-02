@@ -42,7 +42,7 @@ function existsInTrie(word) {
 function generateGrid() {
   playGrids = _.map(roundGrids, grid => {
     const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
-    const chars = _.map(_.times(count, () => _.sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ0')), c => { return c === '0' ? 'Qu' : c });
+    const chars = _.map(_.times(count, () => _.sample('AABCDEEFGHIIJKLMNOOPQRSTUUVWXYZ0')), c => { return c === '0' ? 'Qu' : c });
     return _.map(grid, row => {
       return _.map(row, item => {
         return item ? chars.shift() : undefined;
