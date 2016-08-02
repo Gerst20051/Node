@@ -1,6 +1,7 @@
 const _ = require('underscore');
 const __ = require('lodash');
 const dictionary = require('./dictionary');
+const frequencies = require('./frequencies');
 const fs = require('fs');
 const jsonfile = require('jsonfile');
 const roundGrids = require('./round-grids');
@@ -39,10 +40,18 @@ function existsInTrie(word) {
   return __.has(trie, word.toUpperCase().split('').join('.'));
 }
 
+function generateLetterDistribution() {
+  const minFrequency = __.min(_.values(frequencies));
+  const multiplier = __.round(100 / minFrequency);
+  const letterCounts = __.mapValues(frequencies, (freq, letter) => { return __.round(freq * multiplier); });
+  return _.reduce(letterCounts, (string, count, letter) => { return string += __.repeat(letter, count); }, '');
+}
+
 function generateGrid() {
+  const letters = generateLetterDistribution();
   playGrids = _.map(roundGrids, grid => {
     const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
-    const chars = _.map(_.times(count, () => _.sample('AABCDEEFGHIIJKLMNOOPQRSTUUVWXYZ0')), c => { return c === '0' ? 'Qu' : c });
+    const chars = _.map(_.times(count, () => _.sample(letters)), c => { return c === '0' ? 'Qu' : c });
     return _.map(grid, row => {
       return _.map(row, item => {
         return item ? chars.shift() : undefined;
