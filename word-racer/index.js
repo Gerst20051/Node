@@ -9,22 +9,20 @@ const english = jsonfile.readFileSync('english.json');
 const sowpods = fs.readFileSync(`${__dirname}/sowpods.txt`).toString().split('\n');
 const trie = {};
 const eow = '_';
-const gridSolutions = [];
+const gridSolutions = [[], [], [], []];
 var playGrids = {};
-var pathTree = [[], [], [], []];
+var pathTree = [{}, {}, {}, {}];
+
+function log(key, value) {
+  console.log(`${key} => ${JSON.stringify(value)}`);
+}
 
 init();
 
 function init() {
-  // console.log(`SOWPODS Dictionary List Length => ${dictionary.length}`); // 267751
-  // console.log(`English JSON List Length => ${english.length}`); // 6752
-  // console.log(`SOWPODS TXT List Length => ${sowpods.length}`); // 267751
   createTrie();
-  // console.log(searchTrie('WORDGAME'));
   generateGrid();
-  // console.log(playGrids);
   generateGridSolutions();
-  console.log(pathTree);
 }
 
 function createTrie() {
@@ -37,10 +35,14 @@ function searchTrie(word) {
   return __.get(trie, `${word.toUpperCase()}${eow}`.split(''), false);
 }
 
+function existsInTrie(word) {
+  return __.has(trie, word.toUpperCase().split('').join('.'));
+}
+
 function generateGrid() {
   playGrids = _.map(roundGrids, grid => {
     const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
-    const chars = _.map(_.times(count, () => _.sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ0')), c => { return c === '0' ? 'Qu' : c });
+    const chars = _.map(_.times(count, () => _.sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ0')), c => { return c === '0' ? 'QU' : c });
     return _.map(grid, row => {
       return _.map(row, item => {
         return item ? chars.shift() : undefined;
@@ -51,12 +53,13 @@ function generateGrid() {
 
 function generateGridSolutions() {
   _.each(playGrids, (grid, gridIndex) => {
+    console.log(grid);
     _.each(grid, (row, rowIndex) => {
       _.each(row, (item, itemIndex) => {
         if (item) {
           const pathTreeKey = `${rowIndex},${itemIndex}`;
-          pathTree[gridIndex][pathTreeKey] = [];
-          spiderGridFromIndex(gridIndex, rowIndex, itemIndex, pathTree[gridIndex][pathTreeKey]);
+          pathTree[gridIndex][pathTreeKey] = {};
+          spiderGridFromIndex(gridIndex, rowIndex, itemIndex, pathTreeKey, []);
         }
       });
     });
@@ -75,22 +78,41 @@ function getNearGridOptions(grid, rowIndex, itemIndex) {
     return [w, nw, n, ne, e, se, s, sw];
 }
 
-function filterNearGridOptions(gridIndex, gridOptions) {
-  return _.filter(gridOptions, dir => { return dir; });
+function setToValue(obj, value, path) {
+  for (var i = 0; i < path.length - 1; i++) {
+    obj = obj[path[i]];
+  }
+  obj[path[i]] = value;
 }
 
-function spiderGridFromIndex(gridIndex, rowIndex, itemIndex, currentPath) {
+function getWordFromPath(gridIndex, startingPathKey, path) {
+  var word = '';
+  for (var i = 0; i < path.length; i++) {
+    const coords = path[i].split(',');
+    word += playGrids[gridIndex][coords[0]][coords[1]];
+  }
+  return word;
+}
+
+function filterNearGridOptions(gridIndex, gridOptions, path) {
+  return _.filter(gridOptions, gridOption => {
+    return gridOption && !_.contains(path, `${gridOption[0]},${gridOption[1]}`);
+  });
+}
+
+function spiderGridFromIndex(gridIndex, rowIndex, itemIndex, startingPathKey, fullPath) {
   const grid = playGrids[gridIndex];
-  // const term = searchTrie(grid[rowIndex][itemIndex]);
-  const nearGridOptions = getNearGridOptions(grid, rowIndex, itemIndex);
-  const nearGridOptionsFiltered = filterNearGridOptions(gridIndex, nearGridOptions);
+  const nearGridOptionsFiltered = filterNearGridOptions(gridIndex, getNearGridOptions(grid, rowIndex, itemIndex), fullPath);
   _.each(nearGridOptionsFiltered, (gridOption, gridOptionIndex) => {
-    if (gridOption) {
-      const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
-      if (!currentPath[pathTreeKey]) {
-        currentPath[pathTreeKey] = [];
-      }
-      // spiderGridFromIndex(gridIndex, gridOption[0], gridOption[1], currentPath[pathTreeKey]); // RangeError: Maximum call stack size exceeded
+    const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
+    const currentFullPath = fullPath.concat([ pathTreeKey ]);
+    const currentWord = getWordFromPath(gridIndex, startingPathKey, currentFullPath);
+    if (searchTrie(currentWord) && !_.contains(gridSolutions[gridIndex], currentWord)) {
+      console.log(currentWord);
+      gridSolutions[gridIndex].push(currentWord);
+    }
+    if (existsInTrie(currentWord)) {
+      spiderGridFromIndex(gridIndex, gridOption[0], gridOption[1], startingPathKey, currentFullPath);
     }
   });
 }
