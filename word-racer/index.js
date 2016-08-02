@@ -26,7 +26,7 @@ function init() {
 }
 
 function createTrie() {
-  _.each(dictionary, function (word) {
+  _.each(dictionary, word => {
     __.set(trie, `${word}${eow}`.split(''), true);
   });
 }
@@ -42,7 +42,7 @@ function existsInTrie(word) {
 function generateGrid() {
   playGrids = _.map(roundGrids, grid => {
     const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
-    const chars = _.map(_.times(count, () => _.sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ0')), c => { return c === '0' ? 'QU' : c });
+    const chars = _.map(_.times(count, () => _.sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ0')), c => { return c === '0' ? 'Qu' : c });
     return _.map(grid, row => {
       return _.map(row, item => {
         return item ? chars.shift() : undefined;
@@ -53,7 +53,11 @@ function generateGrid() {
 
 function generateGridSolutions() {
   _.each(playGrids, (grid, gridIndex) => {
+    console.log('');
+    console.log(`Round ${gridIndex}`);
+    console.log('');
     console.log(grid);
+    console.log('');
     _.each(grid, (row, rowIndex) => {
       _.each(row, (item, itemIndex) => {
         if (item) {
@@ -108,7 +112,7 @@ function spiderGridFromIndex(gridIndex, rowIndex, itemIndex, startingPathKey, fu
     const currentFullPath = fullPath.concat([ pathTreeKey ]);
     const currentWord = getWordFromPath(gridIndex, startingPathKey, currentFullPath);
     if (searchTrie(currentWord) && !_.contains(gridSolutions[gridIndex], currentWord)) {
-      console.log(currentWord);
+      console.log(currentWord.toUpperCase());
       gridSolutions[gridIndex].push(currentWord);
     }
     if (existsInTrie(currentWord)) {
