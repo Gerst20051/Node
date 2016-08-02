@@ -42,7 +42,7 @@ function existsInTrie(word) {
 
 function generateLetterDistribution() {
   const minFrequency = __.min(_.values(frequencies));
-  const multiplier = __.round(100 / minFrequency);
+  const multiplier = __.round(102 / minFrequency);
   const letterCounts = __.mapValues(frequencies, (freq, letter) => { return __.round(freq * multiplier); });
   return _.reduce(letterCounts, (string, count, letter) => { return string += __.repeat(letter, count); }, '');
 }
