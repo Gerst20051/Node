@@ -54,7 +54,7 @@ function generateGrid() {
 function generateGridSolutions() {
   _.each(playGrids, (grid, gridIndex) => {
     console.log('');
-    console.log(`Round ${gridIndex}`);
+    console.log(`Round ${gridIndex + 1}`);
     console.log('');
     console.log(grid);
     console.log('');
