@@ -36,7 +36,7 @@ function searchTrie(word) {
 }
 
 function existsInTrie(word) {
-  return true;
+  return __.has(trie, word.toUpperCase().split('').join('.'));
 }
 
 function generateGrid() {
@@ -56,7 +56,7 @@ function generateGridSolutions() {
     console.log(grid);
     _.each(grid, (row, rowIndex) => {
       _.each(row, (item, itemIndex) => {
-        if (item && gridIndex === 0) {
+        if (item) {
           const pathTreeKey = `${rowIndex},${itemIndex}`;
           pathTree[gridIndex][pathTreeKey] = {};
           spiderGridFromIndex(gridIndex, rowIndex, itemIndex, pathTreeKey, []);
@@ -87,7 +87,7 @@ function setToValue(obj, value, path) {
 
 function getWordFromPath(gridIndex, startingPathKey, path) {
   var word = '';
-  for (var i = 0; i < path.length - 1; i++) {
+  for (var i = 0; i < path.length; i++) {
     const coords = path[i].split(',');
     word += playGrids[gridIndex][coords[0]][coords[1]];
   }
