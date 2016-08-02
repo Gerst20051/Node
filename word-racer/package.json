@@ -1,0 +1,18 @@
+{
+  "name": "word-racer",
+  "version": "1.0.0",
+  "description": "Word Racer. Proof of Concept",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrew Gerst",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "underscore": "1.8.3"
+  },
+  "engine": "node >= 6.2.2",
+  "private": true
+}
