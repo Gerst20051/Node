@@ -1,0 +1,21 @@
+{
+  "name": "word-racer-server",
+  "version": "1.0.0",
+  "description": "Word Racer Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --harmony app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrew Gerst",
+  "dependencies": {
+    "bcryptjs": "2.3.0",
+    "mongoose": "4.5.8",
+    "restify": "4.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "1.10.0"
+  },
+  "engine": "node >= 6.2.2",
+  "private": true
+}

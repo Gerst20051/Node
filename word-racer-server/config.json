@@ -1,0 +1,6 @@
+{
+  "creds": {
+    "mongodb": "mongodb://localhost/word-racer"
+  },
+  "port": 8000
+}
