@@ -10,6 +10,8 @@ const schema = new mongoose.Schema({
   lockUntil: Date,
   resetPasswordToken: String,
   resetPasswordExpires: Date
+}, {
+  timestamps: true
 });
 
 schema.methods.comparePassword = function (password, cb) {

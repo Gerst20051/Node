@@ -3,9 +3,23 @@ module.exports = (function () {
     const Session = require('../models/Session');
 
     this.generateResetPasswordToken = (res, user) => {
-      user.resetPasswordToken = 'random20bytetokengeneratedusingcrypto';
-      user.resetPasswordExpires = Date.now() + (60 * 60 * 1E3); // expires 1 hour from now
-      return res.send(200, user);
+      const randomstring = require('randomstring');
+      const resetPasswordToken = randomstring.generate(40);
+      User.generateHash(resetPasswordToken, (err, hash) => {
+        if (err) {
+          console.log(err);
+          return res.send(500);
+        }
+        user.resetPasswordToken = hash;
+        user.resetPasswordExpires = Date.now() + (60 * 60 * 1E3); // expires 1 hour from now
+        user.save((err, savedUser) => {
+          if (err) {
+            console.log(err);
+            return res.send(500);
+          }
+          res.send(200, savedUser);
+        });
+      });
     };
 
     this.checkSession = (req, res, next) => {
@@ -47,13 +61,16 @@ module.exports = (function () {
             console.log(err);
             return res.send(500);
           }
-          return res.send(200, savedUser);
+          res.send(200, savedUser);
         });
       });
     };
 
     this.forgotPassword = (req, res, next) => {
-      const queryParams = { password: req.body.pass };
+      if (!req.body.user) {
+        return res.send(500);
+      }
+      const queryParams = {};
       queryParams[~req.body.user.indexOf('@') ? 'email' : 'username'] = req.body.user;
       User.findOne(queryParams, (err, user) => {
         if (err) {
@@ -63,7 +80,7 @@ module.exports = (function () {
         if (!user) {
           return res.send(404);
         }
-        return this.generateResetPasswordToken(res, user);
+        this.generateResetPasswordToken(res, user);
       });
     };
 
