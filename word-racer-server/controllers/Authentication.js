@@ -40,15 +40,10 @@ module.exports = (function () {
   };
 
   this.checkSession = (req, res, next) => {
-    Session.find({ userId: req.params.userId }, function (err, sessions) {
-      if (err || !sessions) return res.send(500);
-      if (_.some(sessions, function (session) {
-        return session.compareTokenSync(req.params.sessionToken);
-      })) {
-        res.send(200, { success: true });
-      } else {
-        res.send(500);
-      }
+    Session.isSessionTokenValid(req.params.sessionUserId, req.params.sessionToken, function () {
+      res.send(200, { success: true });
+    }, function () {
+      res.send(500);
     });
   };
 

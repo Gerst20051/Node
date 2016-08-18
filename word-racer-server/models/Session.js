@@ -21,4 +21,17 @@ SessionSchema.statics.generateHash = function (token, cb) {
   bcrypt.hash(token, SALT_WORK_FACTOR, cb);
 };
 
+SessionSchema.statics.isSessionTokenValid = function (userId, token, success, failure) {
+  this.find({ userId: userId, expires: { $gt: new Date() }}, function (err, sessions) {
+    if (err || !sessions) return failure();
+    if (_.some(sessions, function (session) {
+      return session.compareTokenSync(token);
+    })) {
+      success();
+    } else {
+      failure();
+    }
+  });
+};
+
 module.exports = mongoose.model('Session', SessionSchema);

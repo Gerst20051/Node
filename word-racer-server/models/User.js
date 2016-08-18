@@ -16,6 +16,9 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// stats (games played / won, win ratio, rank, top score)
+// friends, followers, subscribe alerts
+
 UserSchema.virtual('isLocked').get(function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
 });
