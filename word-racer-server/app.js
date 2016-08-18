@@ -12,4 +12,4 @@ app.listen(config.port, () => {
 });
 
 const routes = require('./routes')(app);
-const sockets = require('./sockets')(app.server);
+global.sockets = require('./sockets')(app.server);

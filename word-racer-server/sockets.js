@@ -4,21 +4,46 @@ module.exports = server => {
   const SOCKETS = {};
 
   io.sockets.on('connection', socket => {
-    socket.id = Math.random();
-    socket.on('data', data => {
-      console.log('data from client', data);
-    });
-    socket.on('disconnect', data => {
-      delete SOCKETS[socket.id];
-      setDataToAllSockets();
-    });
-    SOCKETS[socket.id] = socket;
-    setDataToAllSockets();
+    setupSocket(socket);
+    addDataFromClientListener(socket);
+    addDisconnectListener(socket);
+    sendDataToAllSockets('data', { clients: Object.keys(SOCKETS) });
   });
 
-  function setDataToAllSockets() {
-    Object.keys(SOCKETS).forEach(socketId => {
-      SOCKETS[socketId].emit('data', { clients: Object.keys(SOCKETS) });
+  function setupSocket(socket) {
+    socket.id = Math.random();
+    SOCKETS[socket.id] = socket;
+  }
+
+  function createSocketListener(socket, key, cb) {
+    socket.on(key, cb);
+  }
+
+  function addDisconnectListener(socket) {
+    createSocketListener(socket, 'disconnect', data => {
+      delete SOCKETS[socket.id];
+      sendDataToAllSockets();
     });
   }
+
+  function addDataFromClientListener(socket) {
+    createSocketListener(socket, 'data', data => {
+      console.log('data from client', data);
+    });
+  }
+
+  function getSockets() {
+    return SOCKETS;
+  }
+
+  function sendDataToAllSockets(key = 'data', data = {}) {
+    Object.keys(SOCKETS).forEach(socketId => {
+      SOCKETS[socketId].emit(key, data);
+    });
+  }
+
+  return {
+    getSockets: getSockets,
+    sendDataToAllSockets: sendDataToAllSockets
+  };
 };
