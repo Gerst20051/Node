@@ -1,3 +1,6 @@
+global._ = require('underscore');
+global.__ = require('lodash');
+
 const restify = require('restify');
 const config = require('./config');
 const app = restify.createServer({ name: 'word-racer-rest-api', version: '1.0.0' });
@@ -13,3 +16,4 @@ app.listen(config.port, () => {
 
 const routes = require('./routes')(app);
 global.sockets = require('./sockets')(app.server);
+global.grid = require('./grid');

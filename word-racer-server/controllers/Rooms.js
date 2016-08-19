@@ -1,18 +1,19 @@
-_ = require('underscore');
-
 module.exports = (function () {
   const Room = require('../models/Room');
   const Session = require('../models/Session');
 
   this.getRoom = (req, res, next) => {
-    Room.findById(req.params.roomId, function (err, room) {
+    Room.findById(req.params.roomId, (err, room) => {
       if (err || !room) return res.send(500);
+      if (req.params.join) {
+        sockets.addUserToGameRoom(req.params.sessionUserId, req.params.roomId); // verify session token / user id and lookup username
+      }
       res.send(200, room);
     });
   };
 
   this.getRooms = (req, res, next) => {
-    Room.find({}, function (err, rooms) {
+    Room.find({}, (err, rooms) => {
       if (err || !rooms) return res.send(500);
       res.send(200, rooms);
     });
@@ -29,7 +30,7 @@ module.exports = (function () {
         }
         res.send(200, savedRoom);
       });
-    }, function () {
+    }, () => {
       res.send(500);
     });
   };

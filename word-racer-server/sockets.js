@@ -2,16 +2,18 @@ module.exports = server => {
   const io = require('socket.io')(server);
 
   const SOCKETS = {};
+  const PLAYERS = {};
+  const ROOMS = {};
 
   io.sockets.on('connection', socket => {
     setupSocket(socket);
-    addDataFromClientListener(socket);
     addDisconnectListener(socket);
-    sendDataToAllSockets('data', { clients: Object.keys(SOCKETS) });
+    addStartGameListener(socket);
   });
 
   function setupSocket(socket) {
     socket.id = Math.random();
+    socket.sessionUserId = socket.handshake.query.sessionUserId;
     SOCKETS[socket.id] = socket;
   }
 
@@ -22,12 +24,20 @@ module.exports = server => {
   function addDisconnectListener(socket) {
     createSocketListener(socket, 'disconnect', data => {
       delete SOCKETS[socket.id];
-      sendDataToAllSockets();
+      var roomId = PLAYERS[socket.sessionUserId];
+      if (roomId) {
+        emitToSocketChannel('PlayerLeft', {
+          userId: socket.sessionUserId,
+          roomId: roomId
+        });
+        ROOMS[roomId].splice(ROOMS[roomId].indexOf(roomId), 1);
+      }
+      // if the room is now empty and a game is ongoing stop the game.
     });
   }
 
-  function addDataFromClientListener(socket) {
-    createSocketListener(socket, 'data', data => {
+  function addStartGameListener(socket) {
+    createSocketListener(socket, 'StartGame', data => {
       console.log('data from client', data);
     });
   }
@@ -36,14 +46,42 @@ module.exports = server => {
     return SOCKETS;
   }
 
-  function sendDataToAllSockets(key = 'data', data = {}) {
+  function emitToSocketChannel(channel = 'data', data = {}, cb) {
     Object.keys(SOCKETS).forEach(socketId => {
-      SOCKETS[socketId].emit(key, data);
+      if (!cb || cb(SOCKETS[socketId])) {
+        SOCKETS[socketId].emit(channel, data);
+      }
     });
   }
 
+  function addUserToGameRoom(userId, roomId) {
+    var oldRoomId = PLAYERS[userId];
+    if (oldRoomId) {
+      emitToSocketChannel('PlayerLeft', {
+        userId: userId,
+        roomId: oldRoomId
+      });
+      ROOMS[oldRoomId].splice(ROOMS[oldRoomId].indexOf(oldRoomId), 1);
+    }
+    PLAYERS[userId] = roomId;
+    if (!ROOMS[roomId]) {
+      ROOMS[roomId] = [];
+    }
+    ROOMS[roomId].push(userId);
+    emitToSocketChannel('PlayerJoined', {
+      userId: userId,
+      roomId: roomId
+    });
+  }
+
+  function isUserInRoom(userId, roomId) {
+    return PLAYERS[userId] === roomId;
+  }
+
   return {
+    addUserToGameRoom: addUserToGameRoom,
     getSockets: getSockets,
-    sendDataToAllSockets: sendDataToAllSockets
+    emitToSocketChannel: emitToSocketChannel,
+    isUserInRoom: isUserInRoom
   };
 };

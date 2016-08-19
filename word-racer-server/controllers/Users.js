@@ -1,5 +1,3 @@
-_ = require('underscore');
-
 module.exports = (function () {
   const User = require('../models/User');
 
