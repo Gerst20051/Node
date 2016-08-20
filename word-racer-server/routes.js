@@ -21,4 +21,5 @@ module.exports = router => {
   router.post('/createroom', rooms.createRoom);
 
   router.post('/creategame', games.createGame);
+  router.post('/checkword', games.checkWord);
 };

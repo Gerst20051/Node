@@ -7,6 +7,20 @@ module.exports = (function () {
       if (err || !room) return res.send(500);
       if (req.params.join) {
         sockets.addUserToGameRoom(req.params.sessionUserId, req.params.roomId); // verify session token / user id and lookup username
+        if (sockets.doesRoomHaveGameInProgress(req.params.roomId)) {
+          const gameId = sockets.getGameIdFromRoomId(req.params.roomId);
+          const intermissionDurationSeconds = 10;
+          const roundDurationSeconds = 20;
+          const intermissionDurationInMilliseconds = intermissionDurationSeconds * 1E3;
+          const roundDurationInMilliseconds = roundDurationSeconds * 1E3;
+          return res.send(200, {
+            gameGrids: grid.getGameGridsForGame(gameId),
+            gameId: gameId,
+            intermissionDuration: intermissionDurationInMilliseconds,
+            roomId: req.params.roomId,
+            roundDuration: roundDurationInMilliseconds
+          });
+        }
       }
       res.send(200, room);
     });

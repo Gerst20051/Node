@@ -105,7 +105,7 @@ module.exports = (() => {
       const pathTreeKey = `${gridOption[0]},${gridOption[1]}`;
       const currentFullPath = fullPath.concat([ pathTreeKey ]);
       const currentWord = getWordFromPath(gameId, gridIndex, currentFullPath).toUpperCase();
-      if (searchTrie(currentWord) && !_.contains(gridSolutions[gameId][gridIndex], currentWord)) {
+      if (currentWord.length > 2 && searchTrie(currentWord) && !_.contains(gridSolutions[gameId][gridIndex], currentWord)) {
         gridSolutions[gameId][gridIndex].push(currentWord);
       }
       if (existsInTrie(currentWord)) {
@@ -114,11 +114,21 @@ module.exports = (() => {
     });
   }
 
+  function getGameGridsForGame(gameId) {
+    return playGrids[gameId];
+  }
+
+  function getGridSolutionsByGameIdAndRoundNumber(gameId, roundNumber) {
+    return gridSolutions[gameId][roundNumber - 1];
+  }
+
   return {
-    getTrie: getTrie,
-    searchTrie: searchTrie,
     existsInTrie: existsInTrie,
     generateGrids: generateGrids,
-    generateGridSolutions: generateGridSolutions
+    generateGridSolutions: generateGridSolutions,
+    getGameGridsForGame: getGameGridsForGame,
+    getGridSolutionsByGameIdAndRoundNumber: getGridSolutionsByGameIdAndRoundNumber,
+    getTrie: getTrie,
+    searchTrie: searchTrie
   };
 })();

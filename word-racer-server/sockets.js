@@ -4,8 +4,8 @@ module.exports = server => {
   const SOCKETS = {};
   const PLAYERS = {};
   const ROOMS = {};
+  const GAMES = {};
   const PENDING_EMITS = {};
-  const ROOMS_WITH_GAMES_IN_PROGRESS = [];
 
   io.sockets.on('connection', socket => {
     setupSocket(socket);
@@ -80,16 +80,20 @@ module.exports = server => {
     });
   }
 
-  function setRoomToGameInProgress(roomId) {
-    ROOMS_WITH_GAMES_IN_PROGRESS.push(roomId);
+  function setRoomToGameInProgress(roomId, gameId) {
+    GAMES[roomId] = gameId;
   }
 
   function removeRoomFromGameInProgress(roomId) {
-    ROOMS_WITH_GAMES_IN_PROGRESS.splice(ROOMS_WITH_GAMES_IN_PROGRESS.indexOf(roomId), 1);
+    delete GAMES[roomId];
   }
 
   function doesRoomHaveGameInProgress(roomId) {
-    return _.contains(ROOMS_WITH_GAMES_IN_PROGRESS, roomId);
+    return !!GAMES[roomId];
+  }
+
+  function getGameIdFromRoomId(roomId) {
+    return GAMES[roomId];
   }
 
   function isUserInRoom(userId, roomId) {
@@ -107,8 +111,8 @@ module.exports = server => {
 
   function createGameFutureSocketEmits(roomId, gameId) {
     PENDING_EMITS[roomId] = [];
-    const intermissionDurationSeconds = 30; // 30
-    const roundDurationSeconds = 120; // 120
+    const intermissionDurationSeconds = 10; // 30
+    const roundDurationSeconds = 20; // 120
     const intermissionDurationInMilliseconds = intermissionDurationSeconds * 1E3;
     const roundDurationInMilliseconds = roundDurationSeconds * 1E3;
     const numOfRounds = 6;
@@ -116,16 +120,22 @@ module.exports = server => {
     for (var i = 1; i <= numOfRounds; i++) {
       accumulatedDurationInMilliseconds += intermissionDurationInMilliseconds;
       ((roundNumber, delay) => {
+        const gridSolutions = grid.getGridSolutionsByGameIdAndRoundNumber(gameId, roundNumber);
         PENDING_EMITS[roomId].push(setTimeout(() => {
-          emitToSocketChannel('StartRound', { roundNumber: roundNumber, duration: roundDurationInMilliseconds }, _.partial(emitSocketToRoomCheck, _, roomId));
+          emitToSocketChannel('StartRound', { roundNumber: roundNumber, duration: roundDurationInMilliseconds, solutionsCount: gridSolutions.length }, _.partial(emitSocketToRoomCheck, _, roomId));
           PENDING_EMITS[roomId].shift();
         }, delay));
       })(i, accumulatedDurationInMilliseconds);
       accumulatedDurationInMilliseconds += roundDurationInMilliseconds;
       ((roundNumber, delay, roomId) => {
         const isGameOver = i === numOfRounds;
+        const gridSolutions = grid.getGridSolutionsByGameIdAndRoundNumber(gameId, roundNumber);
         PENDING_EMITS[roomId].push(setTimeout(() => {
-          emitToSocketChannel(isGameOver ? 'GameOver' : 'StartIntermission', isGameOver ? { duration: intermissionDurationInMilliseconds } : { roundNumber: roundNumber + 1, duration: intermissionDurationInMilliseconds }, _.partial(emitSocketToRoomCheck, _, roomId));
+          emitToSocketChannel(
+            isGameOver ? 'GameOver' : 'StartIntermission',
+            isGameOver ? { duration: intermissionDurationInMilliseconds, solutions: gridSolutions } : { roundNumber: roundNumber + 1, duration: intermissionDurationInMilliseconds, solutions: gridSolutions },
+            _.partial(emitSocketToRoomCheck, _, roomId)
+          );
           PENDING_EMITS[roomId].shift();
           if (isGameOver) {
             removeRoomFromGameInProgress(roomId);
@@ -140,6 +150,7 @@ module.exports = server => {
     createGameFutureSocketEmits: createGameFutureSocketEmits,
     doesRoomHaveGameInProgress: doesRoomHaveGameInProgress,
     emitToSocketChannel: emitToSocketChannel,
+    getGameIdFromRoomId: getGameIdFromRoomId,
     getPlayerCountInRoom: getPlayerCountInRoom,
     getSockets: getSockets,
     isUserInRoom: isUserInRoom,

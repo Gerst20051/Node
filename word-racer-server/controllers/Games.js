@@ -3,15 +3,14 @@ module.exports = (function () {
   const GameGrid = require('../models/GameGrid');
   const Session = require('../models/Session');
 
-  const intermissionDurationSeconds = 30; // 30
-  const roundDurationSeconds = 120; // 120
+  const intermissionDurationSeconds = 10; // 30
+  const roundDurationSeconds = 20; // 120
   const intermissionDurationInMilliseconds = intermissionDurationSeconds * 1E3;
   const roundDurationInMilliseconds = roundDurationSeconds * 1E3;
 
   this.createGame = (req, res, next) => {
     if (!req.body.roomId || sockets.doesRoomHaveGameInProgress(req.body.roomId) || !sockets.isUserInRoom(req.body.sessionUserId, req.body.roomId)) return res.send(500);
     Session.isSessionTokenValid(req.body.sessionUserId, req.body.sessionToken, function () {
-      sockets.setRoomToGameInProgress(req.body.roomId);
       const newGame = new Game();
       newGame.roomId = req.body.roomId;
       newGame.save((err, savedGame) => {
@@ -20,8 +19,9 @@ module.exports = (function () {
           sockets.removeRoomFromGameInProgress(req.body.roomId);
           return res.send(500);
         }
+        sockets.setRoomToGameInProgress(req.body.roomId, savedGame._id);
         const grids = grid.generateGrids();
-        const gridSolutions = grid.generateGridSolutions(savedGame._id, grids);
+        grid.generateGridSolutions(savedGame._id, grids);
         const newGameGrids = [];
         for (var gridRoundNumber = 1; gridRoundNumber <= grids.length; gridRoundNumber++) {
           const newGameGrid = new GameGrid();
@@ -42,6 +42,7 @@ module.exports = (function () {
           }, socket => {
             return sockets.isUserInRoom(socket.sessionUserId, req.body.roomId);
           });
+          // }, _.partial(sockets.emitSocketToRoomCheck, _, req.body.roomId));
         }).catch(err => {
           console.log(err);
           return res.send(500);
@@ -50,6 +51,10 @@ module.exports = (function () {
     }, () => {
       res.send(500);
     });
+  };
+
+  this.checkWord = (req, res, next) => {
+
   };
 
   return this;
