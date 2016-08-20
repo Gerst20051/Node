@@ -3,14 +3,21 @@ module.exports = (function () {
   const GameGrid = require('../models/GameGrid');
   const Session = require('../models/Session');
 
+  const intermissionDurationSeconds = 30; // 30
+  const roundDurationSeconds = 120; // 120
+  const intermissionDurationInMilliseconds = intermissionDurationSeconds * 1E3;
+  const roundDurationInMilliseconds = roundDurationSeconds * 1E3;
+
   this.createGame = (req, res, next) => {
-    if (!req.body.roomId) return res.send(500);
+    if (!req.body.roomId || sockets.doesRoomHaveGameInProgress(req.body.roomId) || !sockets.isUserInRoom(req.body.sessionUserId, req.body.roomId)) return res.send(500);
     Session.isSessionTokenValid(req.body.sessionUserId, req.body.sessionToken, function () {
+      sockets.setRoomToGameInProgress(req.body.roomId);
       const newGame = new Game();
       newGame.roomId = req.body.roomId;
       newGame.save((err, savedGame) => {
         if (err) {
           console.log(err);
+          sockets.removeRoomFromGameInProgress(req.body.roomId);
           return res.send(500);
         }
         const grids = grid.generateGrids();
@@ -23,12 +30,19 @@ module.exports = (function () {
           newGameGrid.grid = grids[gridRoundNumber - 1];
           newGameGrids.push(newGameGrid);
         }
-        GameGrid.insertMany(newGameGrids).then((savedGameGrids) => {
+        GameGrid.insertMany(newGameGrids).then(savedGameGrids => {
           res.send(200);
-          sockets.emitToSocketChannel('GameStarted', { gameId: savedGame._id, gameGrids: grids }, socket => {
+          sockets.createGameFutureSocketEmits(req.body.roomId, savedGame._id);
+          sockets.emitToSocketChannel('GameStarted', {
+            gameGrids: grids,
+            gameId: savedGame._id,
+            intermissionDuration: intermissionDurationInMilliseconds,
+            roomId: req.body.roomId,
+            roundDuration: roundDurationInMilliseconds
+          }, socket => {
             return sockets.isUserInRoom(socket.sessionUserId, req.body.roomId);
           });
-        }).catch((err) => {
+        }).catch(err => {
           console.log(err);
           return res.send(500);
         });

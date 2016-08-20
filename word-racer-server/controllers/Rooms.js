@@ -15,7 +15,13 @@ module.exports = (function () {
   this.getRooms = (req, res, next) => {
     Room.find({}, (err, rooms) => {
       if (err || !rooms) return res.send(500);
-      res.send(200, rooms);
+      const newRooms = _.map(rooms, room => {
+        return {
+          _id: room._id,
+          playerCount: sockets.getPlayerCountInRoom(room._id)
+        };
+      });
+      res.send(200, newRooms);
     });
   };
 

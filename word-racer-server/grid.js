@@ -72,24 +72,24 @@ module.exports = (() => {
   }
 
   function getNearGridOptions(grid, rowIndex, itemIndex) {
-      const w = grid[rowIndex] && grid[rowIndex][itemIndex - 1] && [ rowIndex, itemIndex - 1 ];
-      const nw = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex - 1] && [ rowIndex - 1, itemIndex - 1 ];
-      const n = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex] && [ rowIndex - 1, itemIndex ];
-      const ne = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex + 1] && [ rowIndex - 1, itemIndex + 1 ];
-      const e = grid[rowIndex] && grid[rowIndex][itemIndex + 1] && [ rowIndex, itemIndex + 1 ];
-      const se = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex + 1] && [ rowIndex + 1, itemIndex + 1 ];
-      const s = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex] && [ rowIndex + 1, itemIndex ];
-      const sw = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex - 1] && [ rowIndex + 1, itemIndex - 1 ];
-      return [ w, nw, n, ne, e, se, s, sw ];
+    const w = grid[rowIndex] && grid[rowIndex][itemIndex - 1] && [ rowIndex, itemIndex - 1 ];
+    const nw = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex - 1] && [ rowIndex - 1, itemIndex - 1 ];
+    const n = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex] && [ rowIndex - 1, itemIndex ];
+    const ne = grid[rowIndex - 1] && grid[rowIndex - 1][itemIndex + 1] && [ rowIndex - 1, itemIndex + 1 ];
+    const e = grid[rowIndex] && grid[rowIndex][itemIndex + 1] && [ rowIndex, itemIndex + 1 ];
+    const se = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex + 1] && [ rowIndex + 1, itemIndex + 1 ];
+    const s = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex] && [ rowIndex + 1, itemIndex ];
+    const sw = grid[rowIndex + 1] && grid[rowIndex + 1][itemIndex - 1] && [ rowIndex + 1, itemIndex - 1 ];
+    return [ w, nw, n, ne, e, se, s, sw ];
   }
 
   function getWordFromPath(gameId, gridIndex, path) {
-      var word = '';
-      for (var i = 0; i < path.length; i++) {
-          const coords = path[i].split(',');
-          word += playGrids[gameId][gridIndex][coords[0]][coords[1]];
-      }
-      return word;
+    var word = '';
+    for (var i = 0; i < path.length; i++) {
+      const coords = path[i].split(',');
+      word += playGrids[gameId][gridIndex][coords[0]][coords[1]];
+    }
+    return word;
   }
 
   function filterNearGridOptions(gridIndex, gridOptions, path) {
