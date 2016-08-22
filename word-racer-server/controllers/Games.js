@@ -19,7 +19,6 @@ module.exports = (function () {
           sockets.removeRoomFromGameInProgress(req.body.roomId);
           return res.send(500);
         }
-        sockets.setRoomToGameInProgress(req.body.roomId, savedGame._id);
         const grids = grid.generateGrids();
         grid.generateGridSolutions(savedGame._id, grids);
         const newGameGrids = [];
@@ -32,6 +31,7 @@ module.exports = (function () {
         }
         GameGrid.insertMany(newGameGrids).then(savedGameGrids => {
           res.send(200);
+          sockets.setRoomToGameInProgress(req.body.roomId, savedGame._id);
           sockets.createGameFutureSocketEmits(req.body.roomId, savedGame._id);
           sockets.emitToSocketChannel('GameStarted', {
             gameGrids: grids,
@@ -54,7 +54,33 @@ module.exports = (function () {
   };
 
   this.checkWord = (req, res, next) => {
-
+    const searchTerm = req.body.searchTerm;
+    const roundNumber = sockets.getRoundNumberForGameId(req.body.gameId);
+    const response = { exists: false, reason: 'Error' };
+    if (searchTerm.length > 2 && grid.doesWordExistInGridSolutionsForGameIdAndRoundNumber(req.body.gameId, roundNumber, searchTerm)) {
+      if (!grid.hasWordBeenFoundForGameIdAndRoundNumber(req.body.gameId, roundNumber, searchTerm)) {
+        const foundWord = grid.addWordToWordsFound(req.body.gameId, roundNumber, req.body.sessionUserId, searchTerm);
+        const userDetails = sockets.getUserDetails(req.body.sessionUserId);
+        const roomId = sockets.getRoomIdFromGameId(req.body.gameId);
+        sockets.emitToSocketChannel('WordFound', _.extend({}, foundWord, {
+          gameId: req.body.gameId,
+          roomId: roomId,
+          username: userDetails.username,
+        }), socket => {
+          return sockets.isUserInRoom(socket.sessionUserId, roomId);
+        });
+        return res.send(200, { exists: true });
+      } else {
+        response.reason = `The Word '${searchTerm}' Has Already Been Found!`;
+      }
+    } else if (searchTerm.length < 3) {
+      response.reason = 'Words Must Be 3 Characters Or Longer!';
+    } else if (grid.searchTrie(searchTerm)) {
+      response.reason = `'${searchTerm}' Is Not In The Grid!`;
+    } else {
+      response.reason = `'${searchTerm}' Is Not A Word!`;
+    }
+    res.send(200, response);
   };
 
   return this;

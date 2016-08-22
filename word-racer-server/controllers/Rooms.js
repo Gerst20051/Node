@@ -5,7 +5,7 @@ module.exports = (function () {
   this.getRoom = (req, res, next) => {
     Room.findById(req.params.roomId, (err, room) => {
       if (err || !room) return res.send(500);
-      if (req.params.join) {
+      if (req.params.join === 'true') {
         sockets.addUserToGameRoom(req.params.sessionUserId, req.params.roomId); // verify session token / user id and lookup username
         if (sockets.doesRoomHaveGameInProgress(req.params.roomId)) {
           const gameId = sockets.getGameIdFromRoomId(req.params.roomId);
@@ -16,7 +16,9 @@ module.exports = (function () {
           return res.send(200, {
             gameGrids: grid.getGameGridsForGame(gameId),
             gameId: gameId,
+            gameStatus: sockets.getGameStatusForRoomId(req.params.roomId),
             intermissionDuration: intermissionDurationInMilliseconds,
+            playerCount: sockets.getPlayerCountInRoom(room._id),
             roomId: req.params.roomId,
             roundDuration: roundDurationInMilliseconds
           });
@@ -32,6 +34,7 @@ module.exports = (function () {
       const newRooms = _.map(rooms, room => {
         return {
           _id: room._id,
+          gameStatus: sockets.getGameStatusForRoomId(room._id),
           playerCount: sockets.getPlayerCountInRoom(room._id)
         };
       });

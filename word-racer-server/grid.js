@@ -122,13 +122,42 @@ module.exports = (() => {
     return gridSolutions[gameId][roundNumber - 1];
   }
 
+  function doesWordExistInGridSolutionsForGameIdAndRoundNumber(gameId, roundNumber, searchTerm) {
+    return _.contains(gridSolutions[gameId][roundNumber - 1], searchTerm);
+  }
+
+  function hasWordBeenFoundForGameIdAndRoundNumber(gameId, roundNumber, searchTerm) {
+    if (!wordsFound[gameId]) {
+      wordsFound[gameId] = [];
+    }
+    return _.contains(_.reduceRight(wordsFound[gameId], (carry, wordsFoundObject) => {
+      if (wordsFoundObject.roundNumber === roundNumber) {
+        carry.unshift(wordsFoundObject.word);
+      }
+      return carry;
+    }, []), searchTerm);
+  }
+
+  function addWordToWordsFound(gameId, roundNumber, userId, word) {
+    wordsFound[gameId].unshift({
+      roundNumber: roundNumber,
+      timestamp: _.now(),
+      userId: userId,
+      word: word
+    });
+    return _.first(wordsFound[gameId]);
+  }
+
   return {
+    addWordToWordsFound: addWordToWordsFound,
+    doesWordExistInGridSolutionsForGameIdAndRoundNumber: doesWordExistInGridSolutionsForGameIdAndRoundNumber,
     existsInTrie: existsInTrie,
     generateGrids: generateGrids,
     generateGridSolutions: generateGridSolutions,
     getGameGridsForGame: getGameGridsForGame,
     getGridSolutionsByGameIdAndRoundNumber: getGridSolutionsByGameIdAndRoundNumber,
     getTrie: getTrie,
+    hasWordBeenFoundForGameIdAndRoundNumber: hasWordBeenFoundForGameIdAndRoundNumber,
     searchTrie: searchTrie
   };
 })();
