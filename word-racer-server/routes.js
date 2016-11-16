@@ -11,7 +11,7 @@ module.exports = router => {
   router.get('/checksession', authentication.checkSession);
   router.post('/login', authentication.login);
   router.post('/register', authentication.register);
-  router.post('forgotpassword', authentication.forgotPassword);
+  router.post('/forgotpassword', authentication.forgotPassword);
 
   router.get('/user', users.getUser);
   router.get('/users', users.getUsers);
