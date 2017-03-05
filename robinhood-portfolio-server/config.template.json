@@ -1,0 +1,10 @@
+{
+  "creds": {
+    "mongodb": "mongodb://localhost/robinhood-portfolio",
+    "robinhood": {
+        "password": "",
+        "username": ""
+    }
+  },
+  "port": 8002
+}
