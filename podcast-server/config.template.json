@@ -1,0 +1,6 @@
+{
+  "creds": {
+    "mongodb": "mongodb://localhost/podcasts"
+  },
+  "port": 8002
+}
