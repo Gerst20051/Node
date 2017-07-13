@@ -4,7 +4,7 @@ module.exports = (function () {
 
   var token = '';
   var accountData, portfolioData;
-  var positionsData = [], instrumentsData = [], quotesData = [];
+  var positionsData = [], instrumentsData = [], quotesData = [], fullInstrumentsData = [];
   const baseDomain = 'https://api.robinhood.com';
 
   function getOptions() {
@@ -46,6 +46,12 @@ module.exports = (function () {
       .then(this.instruments).then(data => { instrumentsData = data; })
       .then(this.quotes).then(data => { quotesData = data; })
       .then(this.response);
+  };
+
+  this.marginStocks = () => {
+    return Promise.resolve()
+      .then(this.fullInstrumentsList)
+      .then(this.marginStocksResponse);
   };
 
   this.accounts = () => {
@@ -106,6 +112,32 @@ module.exports = (function () {
     });
   };
 
+  this.instrumentCallback = (instrumentId, callback) => {
+    const options = _.extend(getOptions(), {
+      url: `${baseDomain}/instruments/${instrumentId}`
+    });
+    request(options, (error, response, body) => {
+      const json = JSON.parse(body);
+      _.each(json.results, instrument => { fullInstrumentsData.push(instrument); });
+      if (!error && json && json.next) {
+        this.instrumentCallback(`?${json.next.split('?')[1]}`, callback);
+      } else {
+        callback();
+      }
+    });
+  };
+
+  this.fullInstrumentsList = () => {
+    // fullInstrumentsData = [];
+    return new Promise((resolve, reject) => {
+      if (!fullInstrumentsData.length) {
+        this.instrumentCallback('', resolve);
+      } else {
+        resolve();
+      }
+    });
+  };
+
   this.quotes = () => {
     const symbols = _.pluck(instrumentsData, 'symbol');
     const options = _.extend(getOptions(), {
@@ -158,6 +190,21 @@ module.exports = (function () {
           'updated_at'
         ]);
         return position;
+      })
+    };
+  };
+
+  this.marginStocksResponse = () => {
+    return {
+      marginStocks: _.map(_.filter(fullInstrumentsData, instrument => { return instrument.margin_initial_ratio < 1; }), instrument => {
+        return _.pick(instrument, [
+          'day_trade_ratio',
+          'maintenance_ratio',
+          'margin_initial_ratio',
+          'name',
+          'symbol',
+          'tradeable'
+        ]);
       })
     };
   };

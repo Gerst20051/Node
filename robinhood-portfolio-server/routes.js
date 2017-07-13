@@ -6,4 +6,5 @@ module.exports = router => {
   });
 
   router.get('/accountdata', robinhood.getAccountData);
+  router.get('/marginstocks', robinhood.getMarginStocks);
 };

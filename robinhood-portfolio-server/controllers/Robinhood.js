@@ -9,5 +9,13 @@ module.exports = (function () {
     });
   };
 
+  this.getMarginStocks = (req, res, next) => {
+    robinhood.marginStocks().then(results => {
+      res.send(200, results);
+    }).catch(error => {
+      res.send(500);
+    });
+  };
+
   return this;
 })();
