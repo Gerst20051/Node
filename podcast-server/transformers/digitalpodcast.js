@@ -3,7 +3,7 @@ module.exports = (function () {
   this.transformSearchResults = data => {
     return _.map(data.opml.body[0].outline, item => {
       return {
-        title: item.$.text.trim(),
+        title: item.$.text.trim(), // TODO: replace '&amp;' with '&'
         url: item.$.url
       };
     });
@@ -41,6 +41,7 @@ module.exports = (function () {
           title: item.title[0].trim(),
           date: item.pubDate[0],
           subtitle: item['itunes:subtitle'][0].trim(),
+          // description / itunes:summary
           duration: item['itunes:duration'][0],
           url: (item['media:content'] || item.enclosure)[0].$.url
         };
