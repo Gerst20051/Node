@@ -286,7 +286,7 @@ module.exports = (function () {
     ));
   };
 
-  this.optionChain = async (chainId, expirationDates) => {
+  this.optionChain = (chainId, expirationDates) => {
     const params = {
       chain_id: chainId,
       expiration_dates: expirationDates.join(','),
