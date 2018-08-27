@@ -1,0 +1,11 @@
+{
+  "creds": {
+    "mongodb": "mongodb://localhost:27017/robinhood-options",
+    "robinhood": {
+        "client_id": "",
+        "password": "",
+        "username": ""
+    }
+  },
+  "port": 8002
+}
