@@ -8,4 +8,5 @@ module.exports = router => {
 
   router.get('/option-chains', robinhood.getOptionChains);
   router.get('/option-spreads', data.getOptionSpreads);
+  router.get('/option-spreads-list', data.getOptionSpreadsList);
 };

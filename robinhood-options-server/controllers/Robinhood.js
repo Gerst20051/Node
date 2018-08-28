@@ -3,7 +3,7 @@ module.exports = (function () {
 
   this.getOptionChains = (req, res, next) => {
     robinhood.authenticateThenGetOptionData().then(results => {
-      res.send(200, results);
+      res.send(200, 'dont_return_data' in req.query ? {} : results);
     }).catch(error => {
       res.send(500);
     });

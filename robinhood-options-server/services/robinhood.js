@@ -1,4 +1,5 @@
 module.exports = (function () {
+  const fs = require('fs');
   const request = require('request');
   const querystring = require('querystring');
 
@@ -96,6 +97,7 @@ module.exports = (function () {
       .then(this.getOptionsMarketData).then(data => { optionMarketData = data.map(arr => _.flatten(arr)); })
       .then(this.addMarketDataToOptionChains)
       .then(this.addOptionChainsToBasicStructure)
+      .then(this.saveToFile)
       .then(this.response);
   };
 
@@ -416,6 +418,22 @@ module.exports = (function () {
         if (optionType.put) {
           instrument.option_chain.expirations[expiration].puts = _.sortBy(optionType.put.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), 'strike_price').reverse();
         }
+      });
+    });
+  };
+
+  this.saveToFile = () => {
+    return new Promise((resolve, reject) => {
+      const date = new Date();
+      const monthCorrected = date.getMonth() + 1;
+      const month = monthCorrected < 10 ? '0' + monthCorrected : monthCorrected;
+      const day = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+      const hours = date.getHours() < 10 ? '0' + date.getHours() : date.getHours();
+      const minutes = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+      const fileName = `${date.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
+      fs.writeFile(`data/${fileName}.json`, JSON.stringify(basicStructure, null, 2), error => {
+        if (error) reject(error);
+        else resolve();
       });
     });
   };

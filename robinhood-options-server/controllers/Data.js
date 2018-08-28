@@ -1,13 +1,23 @@
 module.exports = (function () {
-  const data = require('./../data.json');
+  const fs = require('fs');
 
   var basicStructure = [];
 
   const fixFloat = value => parseFloat(parseFloat(value).toFixed(2));
 
+  this.getOptionSpreadsList = (req, res, next) => {
+    res.send(200, fs.readdirSync('data').map(file => file.replace('.json', '')).reverse());
+  };
+
   this.getOptionSpreads = (req, res, next) => {
+    const files = fs.readdirSync('data');
+    const file = `${req.query.date}.json`;
+    if (files.indexOf(file) === -1) {
+      return res.send(404);
+    }
+    const data = require(`./../data/${file}`);
     basicStructure = data.map(this.formBasicStructure);
-    const optionSpreads = data.map(this.parseOptionSpreads);
+    data.map(this.parseOptionSpreads);
     res.send(200, basicStructure);
   };
 

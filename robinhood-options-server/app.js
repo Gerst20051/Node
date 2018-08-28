@@ -8,6 +8,11 @@ const db = require('./db');
 
 global.globalConfig = config;
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+});
+
 // TODO: Look at http://restify.com/docs/4to5/
 // By default, queryParser and bodyParser no longer map req.query and req.body to req.params. To get the old behavior, please enable the mapParams behavior with these plugins.
 app.use(restify.plugins.fullResponse());
