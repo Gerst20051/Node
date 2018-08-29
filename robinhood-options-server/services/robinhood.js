@@ -413,10 +413,10 @@ module.exports = (function () {
       expirations.forEach(expiration => {
         const optionType = _.groupBy(optionChainGroupedByExpiration[expiration], 'type');
         if (optionType.call) {
-          instrument.option_chain.expirations[expiration].calls = _.sortBy(optionType.call.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), 'strike_price');
+          instrument.option_chain.expirations[expiration].calls = _.sortBy(optionType.call.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), option => parseFloat(option.strike_price));
         }
         if (optionType.put) {
-          instrument.option_chain.expirations[expiration].puts = _.sortBy(optionType.put.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), 'strike_price').reverse();
+          instrument.option_chain.expirations[expiration].puts = _.sortBy(optionType.put.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), option => parseFloat(option.strike_price)).reverse();
         }
       });
     });
