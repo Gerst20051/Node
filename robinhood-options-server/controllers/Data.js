@@ -38,7 +38,7 @@ module.exports = (function () {
     });
     return {
       quote: {
-        last_trade_price: instrument.quote.last_trade_price,
+        last_trade_price: removeTrailingZeros(instrument.quote.last_trade_price),
       },
       spreads: expirations,
       symbol: instrument.symbol,
