@@ -68,6 +68,24 @@ module.exports = (function () {
       .spreads[expirationDate][isCall ? 'call' : 'put'][isDebit ? 'debit' : 'credit'] = isCall ? spreads.reverse() : spreads;
   };
 
+  this.calculateMaxGain = (isDebit, spread, costOrCredit) => {
+    const maxGain = isDebit ? fixFloat(spread - costOrCredit) : costOrCredit;
+    const percentageCreditRisk = fixFloat(fixFloat(-spread * 100) - fixFloat(-maxGain * 100));
+    const percentageCredit = fixFloat(fixFloat(fixFloat(-maxGain * 100) / percentageCreditRisk) * 100);
+    const percentage = isDebit ? fixFloat(fixFloat(fixFloat(maxGain * 100) / fixFloat(costOrCredit * 100)) * 100) : percentageCredit;
+    const percentageAsStringOrInfinity = percentageCreditRisk <= 0 ? 'Infinity' : `${percentage}%`;
+    return {
+      creditRisk: percentageCreditRisk,
+      description: isDebit
+        ? `${fixFloat(maxGain * 100)} / ${fixFloat(costOrCredit * 100)} = ${percentage}%`
+        : `${fixFloat(-maxGain * 100)} / ${fixFloat(fixFloat(-spread * 100) - fixFloat(-maxGain * 100))} = ${percentageAsStringOrInfinity}`,
+      percentage: percentage,
+      percentageAsStringOrInfinity,
+      percentageOrInfinity: isDebit ? percentage : (percentageCreditRisk <= 0 ? 'Infinity' : percentage),
+      value: maxGain,
+    };
+  };
+
   this.reduceSpreads = (symbol, lastTradePrice, isCall, isDebit, options) => {
     return options.reduce((carry, option, index, array) => {
       if (index === array.length - 1) return carry;
@@ -76,40 +94,44 @@ module.exports = (function () {
       if (longLeg.fundamentals.volume === 0 || shortLeg.fundamentals.volume === 0) return carry;
       if (!longLeg.quote.adjusted_mark_price || !shortLeg.quote.adjusted_mark_price) return carry;
       const legs = `${fixFloat(longLeg.strike_price)} / ${fixFloat(shortLeg.strike_price)}`;
-      const spread = isCall
-        ? fixFloat(shortLeg.strike_price - longLeg.strike_price)
-        : fixFloat(longLeg.strike_price - shortLeg.strike_price);
-      const costOrCredit = fixFloat(longLeg.quote.adjusted_mark_price - shortLeg.quote.adjusted_mark_price);
-      const maxGain = isDebit ? fixFloat(spread - costOrCredit) : costOrCredit;
-      if ((isDebit && (costOrCredit <= 0 || costOrCredit === spread || maxGain <= 0)) || (!isDebit && costOrCredit >= 0)) return carry;
-      const maxGainPercentageCreditRisk = fixFloat(fixFloat(-spread * 100) - fixFloat(-maxGain * 100));
-      const maxGainPercentageCredit = fixFloat(fixFloat(fixFloat(-maxGain * 100) / maxGainPercentageCreditRisk) * 100);
-      const maxGainPercentage = isDebit
-        ? fixFloat(fixFloat(fixFloat(maxGain * 100) / fixFloat(costOrCredit * 100)) * 100)
-        : maxGainPercentageCredit;
-      const maxGainPercentageDisplay = maxGainPercentageCreditRisk <= 0 ? 'Infinity' : `${maxGainPercentage}%`;
+      const spread = isCall ? fixFloat(shortLeg.strike_price - longLeg.strike_price) : fixFloat(longLeg.strike_price - shortLeg.strike_price);
+      const markCostOrCredit = fixFloat(longLeg.quote.adjusted_mark_price - shortLeg.quote.adjusted_mark_price);
+      const marketCostOrCredit = fixFloat(longLeg.quote.ask_price - shortLeg.quote.bid_price);
+      const markPriceMaxGain = this.calculateMaxGain(isDebit, spread, markCostOrCredit);
+      if ((isDebit && (markCostOrCredit <= 0 || markCostOrCredit === spread || markPriceMaxGain.value <= 0)) || (!isDebit && markCostOrCredit >= 0)) return carry;
+      const marketPriceMaxGain = this.calculateMaxGain(isDebit, spread, marketCostOrCredit);
       const typeOfSpread = `${isCall ? 'Call' : 'Put'} ${isDebit ? 'Debit' : 'Credit'} Spread`;
-      const description = isDebit
-        ? `${symbol} ${legs} @ ${costOrCredit} | ${fixFloat(maxGain * 100)} / ${fixFloat(costOrCredit * 100)} = ${maxGainPercentage}%`
-        : `${symbol} ${legs} @ ${costOrCredit} | ${fixFloat(-maxGain * 100)} / ${fixFloat(fixFloat(-spread * 100) - fixFloat(-maxGain * 100))} = ${maxGainPercentageDisplay}`;
-      const itm = isDebit
-        ? (isCall ? shortLeg.strike_price < lastTradePrice : shortLeg.strike_price > lastTradePrice)
-        : (isCall ? shortLeg.strike_price > lastTradePrice : shortLeg.strike_price < lastTradePrice);
-      const itm_percentage = fixFloat(fixFloat(fixFloat(Math.abs(lastTradePrice - shortLeg.strike_price)) / lastTradePrice) * 100);
       if (longLeg.quote.ask_size === 0 || shortLeg.quote.bid_size === 0) return carry;
+      const maxContractsAtMarket = Math.min(longLeg.quote.ask_size, shortLeg.quote.bid_size);
       carry.push({
-        cost: costOrCredit,
-        description,
-        itm,
-        itm_percentage,
+        itm: isDebit
+          ? (isCall ? shortLeg.strike_price < lastTradePrice : shortLeg.strike_price > lastTradePrice)
+          : (isCall ? shortLeg.strike_price > lastTradePrice : shortLeg.strike_price < lastTradePrice),
+        itm_percentage: fixFloat(fixFloat(fixFloat(Math.abs(lastTradePrice - shortLeg.strike_price)) / lastTradePrice) * 100),
         legs: {
           description: legs,
           long: longLeg,
           short: shortLeg,
         },
-        max_gain: maxGain,
-        max_gain_percentage: isDebit ? maxGainPercentage : (maxGainPercentageCreditRisk <= 0 ? 'Infinity' : maxGainPercentage),
+        mark_price_details: {
+          cost: markCostOrCredit,
+          description: markPriceMaxGain.description,
+          max_gain: markPriceMaxGain.value,
+          max_gain_percentage: markPriceMaxGain.percentageOrInfinity,
+        },
+        market_price_details: {
+          cost: marketCostOrCredit,
+          description: marketPriceMaxGain.description,
+          max_contracts_at_market: {
+            cost: fixFloat(marketCostOrCredit * maxContractsAtMarket),
+            number: maxContractsAtMarket,
+            max_gain: fixFloat(marketPriceMaxGain.value * maxContractsAtMarket),
+          },
+          max_gain: marketPriceMaxGain.value,
+          max_gain_percentage: marketPriceMaxGain.percentageOrInfinity,
+        },
         name: `${symbol} ${legs} ${typeOfSpread}`,
+        simple_description: `${symbol} ${legs} @ ${markCostOrCredit}`,
         type: typeOfSpread,
       });
       return carry;
