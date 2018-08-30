@@ -106,8 +106,9 @@ module.exports = (function () {
       const maxContractsAtMarket = Math.min(longLeg.quote.ask_size, shortLeg.quote.bid_size);
       var marketPriceMaxContractsDescription = `Can ${isDebit ? 'Buy' : 'Sell'} ${maxContractsAtMarket} ${maxContractsAtMarket > 1 ? 'Spreads' : 'Spread'}`;
       marketPriceMaxContractsDescription += ` For A $${Math.abs(fixFloat(marketCostOrCredit * maxContractsAtMarket * 100))} ${isDebit ? 'Debit' : 'Credit'}.`;
-      if (isDebit) marketPriceMaxContractsDescription += ` Could Have Max Gains Of $${fixFloat(marketPriceMaxGain.value * maxContractsAtMarket * 100)} At Expiration.`;
-      if (!isDebit) marketPriceMaxContractsDescription += ` This Would Require $${Math.abs(fixFloat(spread * maxContractsAtMarket * 100))} Of Collateral.`;
+      const marketPriceMaxContractsDescription2 = isDebit
+        ? `Could Have Max Gains Of $${fixFloat(marketPriceMaxGain.value * maxContractsAtMarket * 100)} At Expiration.`
+        : `This Would Require $${Math.abs(fixFloat(spread * maxContractsAtMarket * 100))} Of Collateral.`;
       carry.push({
         itm: isDebit
           ? (isCall ? shortLeg.strike_price < lastTradePrice : shortLeg.strike_price > lastTradePrice)
@@ -130,6 +131,7 @@ module.exports = (function () {
           max_contracts_at_market: {
             cost: fixFloat(marketCostOrCredit * maxContractsAtMarket),
             description: marketPriceMaxContractsDescription,
+            description2: marketPriceMaxContractsDescription2,
             number: maxContractsAtMarket,
             max_gain: fixFloat(marketPriceMaxGain.value * maxContractsAtMarket),
           },
