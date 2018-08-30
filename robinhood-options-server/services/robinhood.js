@@ -84,7 +84,7 @@ module.exports = (function () {
     });
   };
 
-  this.authenticateThenGetOptionData = () => {
+  this.authenticateThenGetOptionData = loadFullChain => {
     return Promise.resolve()
       .then(this.getAuthenticationToken).then(_token => { if (_token) token = _token; })
       .then(this.quotes).then(data => { quotesData = _.map(data, this.transformQuote); })
@@ -92,7 +92,7 @@ module.exports = (function () {
       .then(this.fundamentals).then(data => { fundamentalsData = _.map(data, this.transformFundamentals); })
       .then(this.optionExpirationDates).then(data => { optionExpirationData = _.map(data.filter(item => -1 < symbols.indexOf(item.symbol)), this.transformOptionExpirationDates); })
       .then(this.formBasicStructure).then(data => { basicStructure = data; })
-      .then(this.optionChains).then(data => { optionChainsData = this.transformOptionChains(data); })
+      .then(_.partial(this.optionChains, loadFullChain)).then(data => { optionChainsData = this.transformOptionChains(data); })
       .then(this.getAuthBearerToken).then(_bearerToken => { if (_bearerToken) bearerToken = _bearerToken; })
       .then(this.getOptionsMarketData).then(data => { optionMarketData = data.map(arr => _.flatten(arr)); })
       .then(this.addMarketDataToOptionChains)
@@ -279,11 +279,11 @@ module.exports = (function () {
     return quotes;
   };
 
-  this.optionChains = () => {
+  this.optionChains = loadFullChain => {
     return Promise.all(basicStructure.map(quote =>
       this.optionChain(
         quote.option_chain.id,
-        Object.keys(quote.option_chain.expirations).slice(0, 4)
+        Object.keys(quote.option_chain.expirations).slice(0, loadFullChain ? 20 : 6)
       )
     ));
   };
@@ -354,9 +354,13 @@ module.exports = (function () {
     });
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
-        const json = JSON.parse(body);
-        if (error || !json.results.length) reject(error);
-        else resolve(json.results);
+        try {
+          const json = JSON.parse(body);
+          if (error || !json.results.length) resolve([]);
+          else resolve(json.results);
+        } catch (e) {
+          resolve([]);
+        }
       });
     });
   };

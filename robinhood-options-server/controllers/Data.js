@@ -100,9 +100,14 @@ module.exports = (function () {
       const markPriceMaxGain = this.calculateMaxGain(isDebit, spread, markCostOrCredit);
       if ((isDebit && (markCostOrCredit <= 0 || markCostOrCredit === spread || markPriceMaxGain.value <= 0)) || (!isDebit && markCostOrCredit >= 0)) return carry;
       const marketPriceMaxGain = this.calculateMaxGain(isDebit, spread, marketCostOrCredit);
+      if ((isDebit && (marketCostOrCredit <= 0 || marketPriceMaxGain === spread || marketPriceMaxGain.value <= 0)) || (!isDebit && marketCostOrCredit >= 0)) return carry;
       const typeOfSpread = `${isCall ? 'Call' : 'Put'} ${isDebit ? 'Debit' : 'Credit'} Spread`;
       if (longLeg.quote.ask_size === 0 || shortLeg.quote.bid_size === 0) return carry;
       const maxContractsAtMarket = Math.min(longLeg.quote.ask_size, shortLeg.quote.bid_size);
+      var marketPriceMaxContractsDescription = `Can ${isDebit ? 'Buy' : 'Sell'} ${maxContractsAtMarket} ${maxContractsAtMarket > 1 ? 'Spreads' : 'Spread'}`;
+      marketPriceMaxContractsDescription += ` For A $${Math.abs(fixFloat(marketCostOrCredit * maxContractsAtMarket * 100))} ${isDebit ? 'Debit' : 'Credit'}.`;
+      if (isDebit) marketPriceMaxContractsDescription += ` Could Have Max Gains Of $${fixFloat(marketPriceMaxGain.value * maxContractsAtMarket * 100)} At Expiration.`;
+      if (!isDebit) marketPriceMaxContractsDescription += ` This Would Require $${Math.abs(fixFloat(spread * maxContractsAtMarket * 100))} Of Collateral.`;
       carry.push({
         itm: isDebit
           ? (isCall ? shortLeg.strike_price < lastTradePrice : shortLeg.strike_price > lastTradePrice)
@@ -124,6 +129,7 @@ module.exports = (function () {
           description: marketPriceMaxGain.description,
           max_contracts_at_market: {
             cost: fixFloat(marketCostOrCredit * maxContractsAtMarket),
+            description: marketPriceMaxContractsDescription,
             number: maxContractsAtMarket,
             max_gain: fixFloat(marketPriceMaxGain.value * maxContractsAtMarket),
           },
