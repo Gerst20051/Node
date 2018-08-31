@@ -293,7 +293,6 @@ module.exports = (function () {
       chain_id: chainId,
       expiration_dates: expirationDates.join(','),
       state: 'active',
-      tradability: 'tradable',
     };
     const options = _.extend(getOptions(), {
       url: `${baseDomain}/options/instruments/?${querystring.stringify(params)}`,
