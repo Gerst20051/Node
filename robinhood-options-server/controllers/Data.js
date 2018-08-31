@@ -13,7 +13,7 @@ module.exports = (function () {
   this.getOptionSpreads = (req, res, next) => {
     const files = fs.readdirSync('data');
     const file = `${req.query.date}.json`;
-    if (files.indexOf(file) === -1) {
+    if (!files.includes(file)) {
       return res.send(404);
     }
     const data = require(`./../data/${file}`);
@@ -73,11 +73,11 @@ module.exports = (function () {
     const percentageCreditRisk = fixFloat(fixFloat(-spread * 100) - fixFloat(-maxGain * 100));
     const percentageCredit = fixFloat(fixFloat(fixFloat(-maxGain * 100) / percentageCreditRisk) * 100);
     const percentage = isDebit ? fixFloat(fixFloat(fixFloat(maxGain * 100) / fixFloat(costOrCredit * 100)) * 100) : percentageCredit;
-    const percentageAsStringOrInfinity = percentageCreditRisk <= 0 ? 'Infinity' : `${percentage}%`;
+    const percentageAsStringOrInfinity = percentageCreditRisk <= 0 ? 'Infinity' : `${percentage.toLocaleString()}%`;
     return {
       creditRisk: percentageCreditRisk,
       description: isDebit
-        ? `${fixFloat(maxGain * 100)} / ${fixFloat(costOrCredit * 100)} = ${percentage}%`
+        ? `${fixFloat(maxGain * 100)} / ${fixFloat(costOrCredit * 100)} = ${percentage.toLocaleString()}%`
         : `${fixFloat(-maxGain * 100)} / ${fixFloat(fixFloat(-spread * 100) - fixFloat(-maxGain * 100))} = ${percentageAsStringOrInfinity}`,
       percentage: percentage,
       percentageAsStringOrInfinity,
@@ -105,10 +105,10 @@ module.exports = (function () {
       if (longLeg.quote.ask_size === 0 || shortLeg.quote.bid_size === 0) return carry;
       const maxContractsAtMarket = Math.min(longLeg.quote.ask_size, shortLeg.quote.bid_size);
       var marketPriceMaxContractsDescription = `Can ${isDebit ? 'Buy' : 'Sell'} ${maxContractsAtMarket} ${maxContractsAtMarket > 1 ? 'Spreads' : 'Spread'}`;
-      marketPriceMaxContractsDescription += ` For A $${Math.abs(fixFloat(marketCostOrCredit * maxContractsAtMarket * 100))} ${isDebit ? 'Debit' : 'Credit'}.`;
+      marketPriceMaxContractsDescription += ` For A $${Math.abs(fixFloat(marketCostOrCredit * maxContractsAtMarket * 100)).toLocaleString()} ${isDebit ? 'Debit' : 'Credit'}.`;
       const marketPriceMaxContractsDescription2 = isDebit
-        ? `Could Have Max Gains Of $${fixFloat(marketPriceMaxGain.value * maxContractsAtMarket * 100)} At Expiration.`
-        : `This Would Require $${Math.abs(fixFloat(spread * maxContractsAtMarket * 100))} Of Collateral.`;
+        ? `Could Have Max Gains Of $${fixFloat(marketPriceMaxGain.value * maxContractsAtMarket * 100).toLocaleString()} At Expiration.`
+        : `This Would Require $${Math.abs(fixFloat(spread * maxContractsAtMarket * 100)).toLocaleString()} Of Collateral.`;
       carry.push({
         itm: isDebit
           ? (isCall ? shortLeg.strike_price < lastTradePrice : shortLeg.strike_price > lastTradePrice)
@@ -147,7 +147,7 @@ module.exports = (function () {
   };
 
   this.transformOptionLeg = option => {
-    option = _.omit(option, ['id', 'instrument']);
+    option = _.omit(option, [ 'id', 'instrument' ]);
     option.fundamentals = _.mapObject(option.fundamentals, value => {
       return typeof value === 'string' && value.includes('.') ? removeTrailingZeros(value) : value;
     });

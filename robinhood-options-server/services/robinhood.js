@@ -13,6 +13,7 @@ module.exports = (function () {
     optionChainsData = [],
     optionMarketData = [];
 
+  const date = new Date();
   const baseDomain = 'https://api.robinhood.com';
   const symbols = [
     'AAPL',
@@ -90,7 +91,7 @@ module.exports = (function () {
       .then(this.quotes).then(data => { quotesData = _.map(data, this.transformQuote); })
       .then(this.instruments).then(data => { instrumentsData = _.map(data, this.transformInstrument); })
       .then(this.fundamentals).then(data => { fundamentalsData = _.map(data, this.transformFundamentals); })
-      .then(this.optionExpirationDates).then(data => { optionExpirationData = _.map(data.filter(item => -1 < symbols.indexOf(item.symbol)), this.transformOptionExpirationDates); })
+      .then(this.optionExpirationDates).then(data => { optionExpirationData = _.map(data.filter(item => symbols.includes(item.symbol)), this.transformOptionExpirationDates); })
       .then(this.formBasicStructure).then(data => { basicStructure = data; })
       .then(_.partial(this.optionChains, loadFullChain)).then(data => { optionChainsData = this.transformOptionChains(data); })
       .then(this.getAuthBearerToken).then(_bearerToken => { if (_bearerToken) bearerToken = _bearerToken; })
@@ -189,6 +190,7 @@ module.exports = (function () {
     const options = _.extend(getOptions(), {
       url: `${baseDomain}/options/chains/?equity_instrument_ids=${instrumentIds.join(',')}`,
     });
+    // TODO: Figure Out How To Make This API Return Weekly Expo Date On Thursday Night And Friday.
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
         const json = JSON.parse(body);
@@ -198,11 +200,30 @@ module.exports = (function () {
     });
   };
 
+  this.getDateString = date => {
+    const monthCorrected = date.getMonth() + 1;
+    const month = monthCorrected < 10 ? '0' + monthCorrected : monthCorrected;
+    const day = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+    return `${date.getFullYear()}-${month}-${day}`;
+  };
+
   this.transformOptionExpirationDates = optionExpirationDates => {
-    return _.pick(optionExpirationDates, [
+    const data = _.pick(optionExpirationDates, [
       'expiration_dates',
       'symbol',
     ]);
+    const shouldAddWeeklyExpoDate = date.getDay() === 5 || (date.getDay() === 4 && date.getHours() >= 16);
+    if (!shouldAddWeeklyExpoDate) return data;
+    var weeklyExpoDate = this.getDateString(date);
+    if (date.getDay() === 4) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      weeklyExpoDate = this.getDateString(tomorrow);
+    }
+    if (!data.expiration_dates.includes(weeklyExpoDate)) {
+      data.expiration_dates = [ weeklyExpoDate ].concat(data.expiration_dates);
+    }
+    return data;
   };
 
   this.formBasicStructure = () => {
@@ -281,10 +302,7 @@ module.exports = (function () {
 
   this.optionChains = loadFullChain => {
     return Promise.all(basicStructure.map(quote =>
-      this.optionChain(
-        quote.option_chain.id,
-        Object.keys(quote.option_chain.expirations).slice(0, loadFullChain ? 20 : 6)
-      )
+      this.optionChain(quote.option_chain.id, Object.keys(quote.option_chain.expirations).slice(0, loadFullChain ? 20 : 6))
     ));
   };
 
@@ -416,10 +434,10 @@ module.exports = (function () {
       expirations.forEach(expiration => {
         const optionType = _.groupBy(optionChainGroupedByExpiration[expiration], 'type');
         if (optionType.call) {
-          instrument.option_chain.expirations[expiration].calls = _.sortBy(optionType.call.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), option => parseFloat(option.strike_price));
+          instrument.option_chain.expirations[expiration].calls = _.sortBy(optionType.call.map(option => _.omit(option, [ 'chain_symbol', 'expiration_date', 'type' ])), option => parseFloat(option.strike_price));
         }
         if (optionType.put) {
-          instrument.option_chain.expirations[expiration].puts = _.sortBy(optionType.put.map(option => _.omit(option, ['chain_symbol', 'expiration_date', 'type'])), option => parseFloat(option.strike_price)).reverse();
+          instrument.option_chain.expirations[expiration].puts = _.sortBy(optionType.put.map(option => _.omit(option, [ 'chain_symbol', 'expiration_date', 'type' ])), option => parseFloat(option.strike_price)).reverse();
         }
       });
     });
@@ -427,7 +445,6 @@ module.exports = (function () {
 
   this.saveToFile = () => {
     return new Promise((resolve, reject) => {
-      const date = new Date();
       const monthCorrected = date.getMonth() + 1;
       const month = monthCorrected < 10 ? '0' + monthCorrected : monthCorrected;
       const day = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
