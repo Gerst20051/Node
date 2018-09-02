@@ -3,7 +3,8 @@ module.exports = (function () {
   const request = require('request');
   const querystring = require('querystring');
 
-  var token = '',
+  var date = null,
+    token = '',
     bearerToken = '',
     quotesData = [],
     instrumentsData = [],
@@ -13,7 +14,6 @@ module.exports = (function () {
     optionChainsData = [],
     optionMarketData = [];
 
-  const date = new Date();
   const baseDomain = 'https://api.robinhood.com';
   const symbols = [
     'AAPL',
@@ -86,6 +86,7 @@ module.exports = (function () {
   };
 
   this.authenticateThenGetOptionData = loadFullChain => {
+    date = new Date();
     return Promise.resolve()
       .then(this.getAuthenticationToken).then(_token => { if (_token) token = _token; })
       .then(this.quotes).then(data => { quotesData = _.map(data, this.transformQuote); })
