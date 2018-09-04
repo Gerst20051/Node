@@ -65,7 +65,7 @@ module.exports = (function () {
     );
     basicStructure
       .find(quote => quote.symbol === instrument.symbol)
-      .spreads[expirationDate][isCall ? 'call' : 'put'][isDebit ? 'debit' : 'credit'] = isCall ? spreads.reverse() : spreads;
+      .spreads[expirationDate][isCall ? 'call' : 'put'][isDebit ? 'debit' : 'credit'] = isDebit ? spreads : spreads.reverse();
   };
 
   this.calculateMaxGain = (isDebit, spread, costOrCredit) => {
