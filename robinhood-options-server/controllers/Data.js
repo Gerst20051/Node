@@ -111,8 +111,8 @@ module.exports = (function () {
         : `This Would Require $${Math.abs(fixFloat(spread * maxContractsAtMarket * 100)).toLocaleString()} Of Collateral.`;
       carry.push({
         itm: isDebit
-          ? (isCall ? shortLeg.strike_price < lastTradePrice : shortLeg.strike_price > lastTradePrice)
-          : (isCall ? shortLeg.strike_price > lastTradePrice : shortLeg.strike_price < lastTradePrice),
+          ? (isCall ? fixFloat(shortLeg.strike_price) < fixFloat(lastTradePrice) : fixFloat(shortLeg.strike_price) > fixFloat(lastTradePrice))
+          : (isCall ? fixFloat(shortLeg.strike_price) > fixFloat(lastTradePrice) : fixFloat(shortLeg.strike_price) < fixFloat(lastTradePrice)),
         itm_percentage: fixFloat(fixFloat(fixFloat(Math.abs(lastTradePrice - shortLeg.strike_price)) / lastTradePrice) * 100),
         legs: {
           description: legs,
