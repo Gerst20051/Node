@@ -15,7 +15,7 @@ module.exports = (function () {
     optionMarketData = [];
 
   const baseDomain = 'https://api.robinhood.com';
-  const symbols = [
+  const defaultSymbols = [
     'AAPL',
     'AMZN',
     'BABA',
@@ -29,7 +29,14 @@ module.exports = (function () {
     'QQQ',
     'SPY',
     'TSLA',
+    'UVXY',
   ];
+  const bonusSymbols = [
+    'CRM',
+    'DIS',
+    'JPM',
+  ];
+  const symbols = defaultSymbols.concat(bonusSymbols).sort();
 
   function getOptions() {
     const options = {
