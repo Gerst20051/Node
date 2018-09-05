@@ -1,0 +1,6 @@
+{
+  "creds": {
+    "mongodb": "mongodb://localhost/stock-market-discovery"
+  },
+  "port": 8001
+}
