@@ -17,5 +17,21 @@ module.exports = (function () {
     });
   };
 
+  this.getOptionsPortfolio = (req, res, next) => {
+    robinhood.optionsPortfolio().then(results => {
+      res.send(200, results);
+    }).catch(error => {
+      res.send(500);
+    });
+  };
+
+  this.getStocksPortfolio = (req, res, next) => {
+    robinhood.stocksPortfolio().then(results => {
+      res.send(200, results);
+    }).catch(error => {
+      res.send(500);
+    });
+  };
+
   return this;
 })();

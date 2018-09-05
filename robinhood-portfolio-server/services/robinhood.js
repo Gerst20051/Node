@@ -2,16 +2,19 @@ module.exports = (function () {
   const Promise = require('promise');
   const request = require('request');
 
-  var token = '';
-  var accountData, portfolioData;
-  var positionsData = [], instrumentsData = [], quotesData = [], fullInstrumentsData = [];
+  let token = '';
+  let accountData, portfolioData;
+  let stockPositionsData = [], optionPositionsData = [], instrumentsData = [], quotesData = [], fullInstrumentsData = [];
   const baseDomain = 'https://api.robinhood.com';
 
+  const fixFloat = value => parseFloat(parseFloat(value).toFixed(2));
+  const removeTrailingZeros = value => String(parseFloat(value));
+
   function getOptions() {
-    var options = {
+    let options = {
       headers: {
-        'Accept': 'application/json'
-      }
+        'Accept': 'application/json',
+      },
     };
     if (token) {
       options.headers['Authorization'] = `Token ${token}`;
@@ -23,10 +26,10 @@ module.exports = (function () {
     const options = _.extend(getOptions(), {
       form: {
         username: globalConfig.creds.robinhood.username,
-        password: globalConfig.creds.robinhood.password
+        password: globalConfig.creds.robinhood.password,
       },
       method: 'POST',
-      url: `${baseDomain}/api-token-auth/`
+      url: `${baseDomain}/api-token-auth/`,
     });
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
@@ -42,10 +45,7 @@ module.exports = (function () {
       .then(this.authenticate).then(_token => { if (_token) token = _token; })
       .then(this.accounts).then(data => { accountData = data; })
       .then(this.portfolio).then(data => { portfolioData = data; })
-      .then(_.partial(this.positions, true)).then(data => { positionsData = data; })
-      .then(this.instruments).then(data => { instrumentsData = data; })
-      .then(this.quotes).then(data => { quotesData = data; })
-      .then(this.response);
+      .then(this.accountResponse);
   };
 
   this.marginStocks = () => {
@@ -54,9 +54,29 @@ module.exports = (function () {
       .then(this.marginStocksResponse);
   };
 
+  this.optionsPortfolio = () => {
+    return Promise.resolve()
+      .then(this.authenticate).then(_token => { if (_token) token = _token; })
+      .then(this.accounts).then(data => { accountData = data; })
+      .then(this.portfolio).then(data => { portfolioData = data; })
+      .then(_.partial(this.optionsAggregatePositions, true)).then(data => { optionPositionsData = data.filter(item => fixFloat(item.quantity) > 0); })
+      .then(this.optionsPortfolioResponse);
+  };
+
+  this.stocksPortfolio = () => {
+    return Promise.resolve()
+      .then(this.authenticate).then(_token => { if (_token) token = _token; })
+      .then(this.accounts).then(data => { accountData = data; })
+      .then(this.portfolio).then(data => { portfolioData = data; })
+      .then(_.partial(this.stockPositions, true)).then(data => { stockPositionsData = data; })
+      .then(this.instruments).then(data => { instrumentsData = data; })
+      .then(this.quotes).then(data => { quotesData = data; })
+      .then(this.stocksPortfolioResponse);
+  };
+
   this.accounts = () => {
     const options = _.extend(getOptions(), {
-      url: `${baseDomain}/accounts/`
+      url: `${baseDomain}/accounts/`,
     });
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
@@ -69,7 +89,7 @@ module.exports = (function () {
 
   this.portfolio = () => {
     const options = _.extend(getOptions(), {
-      url: `${accountData.url}/portfolio/`
+      url: `${accountData.url}portfolio/`,
     });
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
@@ -80,10 +100,24 @@ module.exports = (function () {
     });
   };
 
-  this.positions = (nonzero) => {
+  this.optionsAggregatePositions = nonzero => {
     const query = nonzero ? '?nonzero=true' : '';
     const options = _.extend(getOptions(), {
-      url: `${accountData.url}/positions/${query}`
+      url: `${baseDomain}/options/aggregate_positions/${query}`,
+    });
+    return new Promise((resolve, reject) => {
+      request(options, (error, response, body) => {
+        const json = JSON.parse(body);
+        if (error || !json.results) reject(error);
+        else resolve(json.results);
+      });
+    });
+  };
+
+  this.stockPositions = nonzero => {
+    const query = nonzero ? '?nonzero=true' : '';
+    const options = _.extend(getOptions(), {
+      url: `${accountData.url}positions/${query}`,
     });
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
@@ -95,13 +129,13 @@ module.exports = (function () {
   };
 
   this.instruments = () => {
-    const instrumentIds = _.map(_.pluck(positionsData, 'instrument'), instrument => { return _.last(_.compact(instrument.split('/'))); });
+    const instrumentIds = _.map(_.pluck(stockPositionsData, 'instrument'), instrument => _.last(_.compact(instrument.split('/'))));
     return Promise.all(_.map(instrumentIds, this.instrument));
   };
 
-  this.instrument = (instrumentId) => {
+  this.instrument = instrumentId => {
     const options = _.extend(getOptions(), {
-      url: `${baseDomain}/instruments/${instrumentId}`
+      url: `${baseDomain}/instruments/${instrumentId}`,
     });
     return new Promise((resolve, reject) => {
       request(options, (error, response, body) => {
@@ -114,7 +148,7 @@ module.exports = (function () {
 
   this.instrumentCallback = (instrumentId, callback) => {
     const options = _.extend(getOptions(), {
-      url: `${baseDomain}/instruments/${instrumentId}`
+      url: `${baseDomain}/instruments/${instrumentId}`,
     });
     request(options, (error, response, body) => {
       const json = JSON.parse(body);
@@ -128,7 +162,6 @@ module.exports = (function () {
   };
 
   this.fullInstrumentsList = () => {
-    // fullInstrumentsData = [];
     return new Promise((resolve, reject) => {
       if (!fullInstrumentsData.length) {
         this.instrumentCallback('', resolve);
@@ -141,9 +174,12 @@ module.exports = (function () {
   this.quotes = () => {
     const symbols = _.pluck(instrumentsData, 'symbol');
     const options = _.extend(getOptions(), {
-      url: `${baseDomain}/quotes/?symbols=${symbols.join()}`
+      url: `${baseDomain}/quotes/?symbols=${symbols.join()}`,
     });
     return new Promise((resolve, reject) => {
+      if (!symbols.length) {
+        return resolve([]);
+      }
       request(options, (error, response, body) => {
         const json = JSON.parse(body);
         if (error || !json.results) reject(error);
@@ -152,60 +188,79 @@ module.exports = (function () {
     });
   };
 
-  this.response = () => {
+  this.accountResponse = () => {
     return {
       account: _.extend(_.pick(accountData.margin_balances, [
         'day_trade_buying_power',
         'overnight_buying_power',
         'start_of_day_overnight_buying_power',
-        'unallocated_margin_cash'
+        'unallocated_margin_cash',
       ]), _.pick(accountData, [
         'buying_power',
         'cash_held_for_orders',
-        'sma'
+        'sma',
       ])),
       portfolio: _.pick(portfolioData, [
         'equity',
         'extended_hours_equity',
         'extended_hours_market_value',
-        'market_value'
+        'market_value',
       ]),
-      positions: _.map(positionsData, positionData => {
-        const instrumentData = _.pick(_.find(instrumentsData, instrumentData => {
-          return instrumentData.id === _.last(_.compact(positionData.instrument.split('/')));
-        }), [
-          'symbol',
-          'name'
-        ]);
-        var position = _.extend(_.omit(positionData, [
-          'account',
-          'instrument',
-          'url'
-        ]), instrumentData);
-        position.quote = _.omit(_.find(quotesData, quoteData => { return quoteData.symbol === position.symbol; }), [
-          'instrument',
-          'last_trade_price_source',
-          'previous_close_date',
-          'trading_halted',
-          'updated_at'
-        ]);
-        return position;
-      })
     };
   };
 
   this.marginStocksResponse = () => {
     return {
-      marginStocks: _.map(_.filter(fullInstrumentsData, instrument => { return instrument.margin_initial_ratio < 1; }), instrument => {
+      marginStocks: _.map(_.filter(fullInstrumentsData, instrument => instrument.margin_initial_ratio < 1), instrument => {
         return _.pick(instrument, [
           'day_trade_ratio',
           'maintenance_ratio',
           'margin_initial_ratio',
           'name',
           'symbol',
-          'tradeable'
+          'tradeable',
         ]);
       })
+    };
+  };
+
+  this.optionsPortfolioResponse = () => {
+    return {
+      ...this.accountResponse(),
+      ...{
+        positions: _.map(optionPositionsData, positionData => {
+          return positionData; // TODO: Transform Data
+        }),
+      },
+    };
+  };
+
+  this.stocksPortfolioResponse = () => {
+    return {
+      ...this.accountResponse(),
+      ...{
+        positions: _.map(stockPositionsData, positionData => {
+          const instrumentData = _.pick(_.find(instrumentsData, instrumentData => {
+            return instrumentData.id === _.last(_.compact(positionData.instrument.split('/')));
+          }), [
+            'symbol',
+            'name',
+          ]);
+          let position = _.extend(_.omit(positionData, [
+            'account',
+            'instrument',
+            'url',
+          ]), instrumentData);
+          position.quote = _.omit(_.find(quotesData, quoteData => quoteData.symbol === position.symbol), [
+            'instrument',
+            'last_trade_price_source',
+            'previous_close_date',
+            'trading_halted',
+            'updated_at',
+          ]);
+          return position;
+        }),
+      },
     };
   };
 
