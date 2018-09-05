@@ -211,7 +211,7 @@ module.exports = (function () {
 
   this.marginStocksResponse = () => {
     return {
-      marginStocks: _.map(_.filter(fullInstrumentsData, instrument => instrument.margin_initial_ratio < 1), instrument => {
+      margin_stocks: _.map(_.filter(fullInstrumentsData, instrument => instrument.margin_initial_ratio < 1), instrument => {
         return _.pick(instrument, [
           'day_trade_ratio',
           'maintenance_ratio',
