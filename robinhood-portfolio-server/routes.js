@@ -5,5 +5,8 @@ module.exports = router => {
     return res.send('WELCOME TO THE ROBINHOOD PORTFOLIO REST API');
   });
 
-  router.get('/accountdata', robinhood.getAccountData);
+  router.get('/account-data', robinhood.getAccountData);
+  router.get('/margin-stocks', robinhood.getMarginStocks);
+  router.get('/options-portfolio', robinhood.getOptionsPortfolio);
+  router.get('/stocks-portfolio', robinhood.getStocksPortfolio);
 };

@@ -3,7 +3,7 @@ global.__ = require('lodash');
 
 const restify = require('restify');
 const config = require('./config');
-const app = restify.createServer({ name: 'robinhood-portfoio-rest-api', version: '1.0.0' });
+const app = restify.createServer({ name: 'robinhood-portfolio-rest-api', version: '1.0.0' });
 const db = require('./db');
 
 global.globalConfig = config;
