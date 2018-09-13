@@ -31,11 +31,7 @@ module.exports = (function () {
     'TSLA',
     'UVXY',
   ];
-  const bonusSymbols = [
-    'CRM',
-    'DIS',
-    'JPM',
-  ];
+  const bonusSymbols = [];
   const symbols = defaultSymbols.concat(bonusSymbols).sort();
 
   function getOptions() {
@@ -46,29 +42,30 @@ module.exports = (function () {
     };
     if (bearerToken) {
       options.headers.Authorization = `Bearer ${bearerToken}`;
-    } else if (token) {
-      options.headers.Authorization = `Token ${token}`;
     }
+    // else if (token) {
+    //   options.headers.Authorization = `Token ${token}`;
+    // }
     return options;
   }
 
-  this.getAuthenticationToken = () => {
-    const options = _.extend(getOptions(), {
-      form: {
-        username: globalConfig.creds.robinhood.username,
-        password: globalConfig.creds.robinhood.password,
-      },
-      method: 'POST',
-      url: `${baseDomain}/api-token-auth/`,
-    });
-    return new Promise((resolve, reject) => {
-      request(options, (error, response, body) => {
-        const json = JSON.parse(body);
-        if (error) reject(error);
-        else resolve(json.token);
-      });
-    });
-  };
+  // this.getAuthenticationToken = () => {
+  //   const options = _.extend(getOptions(), {
+  //     form: {
+  //       username: globalConfig.creds.robinhood.username,
+  //       password: globalConfig.creds.robinhood.password,
+  //     },
+  //     method: 'POST',
+  //     url: `${baseDomain}/api-token-auth/`,
+  //   });
+  //   return new Promise((resolve, reject) => {
+  //     request(options, (error, response, body) => {
+  //       const json = JSON.parse(body);
+  //       if (error) reject(error);
+  //       else resolve(json.token);
+  //     });
+  //   });
+  // };
 
   this.getAuthBearerToken = () => {
     const options = _.extend(getOptions(), {
@@ -95,14 +92,15 @@ module.exports = (function () {
   this.authenticateThenGetOptionData = loadFullChain => {
     date = new Date();
     return Promise.resolve()
-      .then(this.getAuthenticationToken).then(_token => { if (_token) token = _token; })
+      // .then(this.getAuthenticationToken).then(_token => { if (_token) token = _token; })
+      .then(this.getAuthBearerToken).then(_bearerToken => { if (_bearerToken) bearerToken = _bearerToken; })
       .then(this.quotes).then(data => { quotesData = _.map(data, this.transformQuote); })
       .then(this.instruments).then(data => { instrumentsData = _.map(data, this.transformInstrument); })
       .then(this.fundamentals).then(data => { fundamentalsData = _.map(data, this.transformFundamentals); })
       .then(this.optionExpirationDates).then(data => { optionExpirationData = _.map(data.filter(item => symbols.includes(item.symbol)), this.transformOptionExpirationDates); })
       .then(this.formBasicStructure).then(data => { basicStructure = data; })
       .then(_.partial(this.optionChains, loadFullChain)).then(data => { optionChainsData = this.transformOptionChains(data); })
-      .then(this.getAuthBearerToken).then(_bearerToken => { if (_bearerToken) bearerToken = _bearerToken; })
+      // .then(this.getAuthBearerToken).then(_bearerToken => { if (_bearerToken) bearerToken = _bearerToken; })
       .then(this.getOptionsMarketData).then(data => { optionMarketData = data.map(arr => _.flatten(arr)); })
       .then(this.addMarketDataToOptionChains)
       .then(this.addOptionChainsToBasicStructure)
