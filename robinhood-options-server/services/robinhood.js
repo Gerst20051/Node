@@ -73,12 +73,12 @@ module.exports = (function () {
     return Promise.resolve()
       .then(this.getAuthBearerToken).then(_bearerToken => { if (_bearerToken) bearerToken = _bearerToken; })
       .then(this.quotes).then(data => { quotesData = _.map(data, this.transformQuote); })
-      .then(this.instruments).then(data => { instrumentsData = _.map(data, this.transformInstrument); })
-      .then(this.fundamentals).then(data => { fundamentalsData = _.map(data, this.transformFundamentals); })
-      .then(this.optionExpirationDates).then(data => { optionExpirationData = _.map(data.filter(item => symbols.includes(item.symbol)), this.transformOptionExpirationDates); })
-      .then(this.formBasicStructure).then(data => { basicStructure = data; })
-      .then(_.partial(this.optionChains, loadFullChain)).then(data => { optionChainsData = this.transformOptionChains(data); })
-      .then(this.getOptionsMarketData).then(data => { optionMarketData = data.map(arr => _.flatten(arr)); })
+      .then(this.instruments).then(data => { instrumentsData = _.map(data, this.transformInstrument); console.log('instrumentsData'); })
+      .then(this.fundamentals).then(data => { fundamentalsData = _.map(data, this.transformFundamentals); console.log('fundamentalsData'); })
+      .then(this.optionExpirationDates).then(data => { optionExpirationData = _.map(data.filter(item => symbols.includes(item.symbol)), this.transformOptionExpirationDates); console.log('optionExpirationData'); })
+      .then(this.formBasicStructure).then(data => { basicStructure = data; console.log('basicStructure'); })
+      .then(_.partial(this.optionChains, loadFullChain)).then(data => { optionChainsData = this.transformOptionChains(data); console.log('optionChainsData'); })
+      .then(this.getOptionsMarketData).then(data => { optionMarketData = data.map(arr => _.flatten(arr)); console.log('optionMarketData'); })
       .then(this.addMarketDataToOptionChains)
       .then(this.addOptionChainsToBasicStructure)
       .then(this.saveToFile)
@@ -404,6 +404,7 @@ module.exports = (function () {
         ]);
       });
     });
+    console.log('addMarketDataToOptionChains');
   };
 
   this.getOptionChainBySymbol = symbol => {
@@ -415,6 +416,7 @@ module.exports = (function () {
       const optionChainForSymbol = this.getOptionChainBySymbol(instrument.symbol);
       const optionChainGroupedByExpiration = _.groupBy(optionChainForSymbol, 'expiration_date');
       const expirations = Object.keys(instrument.option_chain.expirations);
+      console.log('expirations', expirations);
       expirations.forEach(expiration => {
         const optionType = _.groupBy(optionChainGroupedByExpiration[expiration], 'type');
         if (optionType.call) {
@@ -425,6 +427,7 @@ module.exports = (function () {
         }
       });
     });
+    console.log('addOptionChainsToBasicStructure');
   };
 
   this.saveToFile = () => {

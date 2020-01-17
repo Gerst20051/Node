@@ -1,7 +1,7 @@
 module.exports = (function () {
   const fs = require('fs');
 
-  var basicStructure = [];
+  let basicStructure = [];
 
   const fixFloat = value => parseFloat(parseFloat(value).toFixed(2));
   const removeTrailingZeros = value => String(parseFloat(value));
@@ -104,7 +104,7 @@ module.exports = (function () {
       const typeOfSpread = `${isCall ? 'Call' : 'Put'} ${isDebit ? 'Debit' : 'Credit'} Spread`;
       if (longLeg.quote.ask_size === 0 || shortLeg.quote.bid_size === 0) return carry;
       const maxContractsAtMarket = Math.min(longLeg.quote.ask_size, shortLeg.quote.bid_size);
-      var marketPriceMaxContractsDescription = `Can ${isDebit ? 'Buy' : 'Sell'} ${maxContractsAtMarket} ${maxContractsAtMarket > 1 ? 'Spreads' : 'Spread'}`;
+      let marketPriceMaxContractsDescription = `Can ${isDebit ? 'Buy' : 'Sell'} ${maxContractsAtMarket} ${maxContractsAtMarket > 1 ? 'Spreads' : 'Spread'}`;
       marketPriceMaxContractsDescription += ` For A $${Math.abs(fixFloat(marketCostOrCredit * maxContractsAtMarket * 100)).toLocaleString()} ${isDebit ? 'Debit' : 'Credit'}.`;
       const marketPriceMaxContractsDescription2 = isDebit
         ? `Could Have Max Gains Of $${fixFloat(marketPriceMaxGain.value * maxContractsAtMarket * 100).toLocaleString()} At Expiration.`
