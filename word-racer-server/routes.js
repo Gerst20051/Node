@@ -22,4 +22,5 @@ module.exports = router => {
 
   router.post('/creategame', games.createGame);
   router.post('/checkword', games.checkWord);
+  router.get('/grid', games.generateGridAndSolutions);
 };

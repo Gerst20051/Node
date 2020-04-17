@@ -43,13 +43,15 @@ module.exports = (() => {
   }
 
   function generateGrids() {
-    return _.map(roundGrids, grid => {
-      const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
-      const chars = _.map(_.times(count, () => _.sample(letters)), c => { return c === '0' ? 'Qu' : c });
-      return _.map(grid, row => {
-        return _.map(row, item => {
-          return item ? chars.shift() : undefined;
-        });
+    return _.map(roundGrids, generateGrid);
+  }
+
+  function generateGrid(grid) {
+    const count = _.reduce(_.flatten(grid), (carry, item) => { return item ? ++carry : carry; }, 0);
+    const chars = _.map(_.times(count, () => _.sample(letters)), c => { return c === '0' ? 'Qu' : c });
+    return _.map(grid, row => {
+      return _.map(row, item => {
+        return item ? chars.shift() : undefined;
       });
     });
   }
@@ -152,6 +154,7 @@ module.exports = (() => {
     addWordToWordsFound: addWordToWordsFound,
     doesWordExistInGridSolutionsForGameIdAndRoundNumber: doesWordExistInGridSolutionsForGameIdAndRoundNumber,
     existsInTrie: existsInTrie,
+    generateGrid: generateGrid,
     generateGrids: generateGrids,
     generateGridSolutions: generateGridSolutions,
     getGameGridsForGame: getGameGridsForGame,

@@ -1,4 +1,5 @@
 module.exports = (function () {
+  const roundGrids = require('../round-grids');
   const Game = require('../models/Game');
   const GameGrid = require('../models/GameGrid');
   const Session = require('../models/Session');
@@ -81,6 +82,16 @@ module.exports = (function () {
       response.reason = `'${searchTerm}' Is Not A Word!`;
     }
     res.send(200, response);
+  };
+
+  this.generateGridAndSolutions = (req, res, next) => {
+    const gameId = 'TEMPORARY';
+    const generatedGrid = grid.generateGrid(roundGrids[0]);
+    grid.generateGridSolutions(gameId, [generatedGrid]);
+    res.send(200, {
+      grid: generatedGrid,
+      solutions: grid.getGridSolutionsByGameIdAndRoundNumber(gameId, 1).sort(),
+    });
   };
 
   return this;
