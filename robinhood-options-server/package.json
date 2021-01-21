@@ -15,7 +15,7 @@
     "mongoose": "^5.2.9",
     "request": "^2.88.0",
     "restify": "^7.2.1",
-    "socket.io": "^2.1.1",
+    "socket.io": "^2.4.0",
     "underscore": "^1.9.1"
   },
   "devDependencies": {
