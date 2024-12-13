@@ -12,7 +12,7 @@
   "author": "Andrew Gerst",
   "dependencies": {
     "lodash": "^4.17.10",
-    "mongoose": "^5.2.9",
+    "mongoose": "^5.7.5",
     "request": "^2.88.0",
     "restify": "^7.2.1",
     "socket.io": "^2.1.1",
