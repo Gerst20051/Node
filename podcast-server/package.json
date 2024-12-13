@@ -12,7 +12,7 @@
   "author": "Andrew Gerst",
   "dependencies": {
     "lodash": "4.17.4",
-    "mongoose": "4.9.3",
+    "mongoose": "5.8.7",
     "promise": "7.1.1",
     "request": "2.81.0",
     "restify": "4.3.0",
