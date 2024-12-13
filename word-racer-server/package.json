@@ -12,10 +12,10 @@
   "dependencies": {
     "bcryptjs": "2.3.0",
     "lodash": "4.14.1",
-    "mongoose": "4.5.8",
+    "mongoose": "4.13.21",
     "randomstring": "1.1.5",
     "restify": "4.1.1",
-    "socket.io": "1.4.8",
+    "socket.io": "4.5.4",
     "underscore": "1.8.3"
   },
   "devDependencies": {
