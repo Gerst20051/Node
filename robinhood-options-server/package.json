@@ -16,7 +16,7 @@
     "request": "^2.88.0",
     "restify": "^7.2.1",
     "socket.io": "^2.1.1",
-    "underscore": "^1.9.1"
+    "underscore": "^1.12.1"
   },
   "devDependencies": {
     "forever": "^0.15.3",
